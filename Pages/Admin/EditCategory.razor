@@ -1,0 +1,186 @@
+@page "/admin/categories/editcategory"
+@page "/admin/categories/editcategory/{id:int}"
+@layout AdminLayout
+@inject StoreDbContext Context
+@inject NavigationManager NavManager
+
+<style>
+    .editor-header {
+        margin-bottom: 30px;
+    }
+
+    .page-title {
+        font-size: 2rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .editor-form {
+        background: white;
+        border-radius: 16px;
+        padding: 30px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .form-group {
+        margin-bottom: 25px;
+    }
+
+    .form-group label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .form-control {
+        padding: 12px 16px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .form-check {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 15px;
+        background: #f8f9ff;
+        border-radius: 8px;
+    }
+
+    .form-check-input {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+
+    .form-check-label {
+        font-weight: 500;
+        cursor: pointer;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 30px;
+    }
+
+    .btn-save {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+    }
+
+    .btn-cancel {
+        background: #e0e0e0;
+        color: #333;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+    }
+</style>
+
+<div class="page-card">
+    <div class="editor-header">
+        <h2 class="page-title">
+            <i class="fas fa-@(id == 0 ? "plus-circle" : "edit")"></i>
+            <span>@(id == 0 ? "Thêm danh mục mới" : "Chỉnh sửa danh mục")</span>
+        </h2>
+    </div>
+
+    <div class="editor-form">
+<EditForm Model="category" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+            <ValidationSummary class="alert alert-danger" />
+
+            <div class="form-group">
+                <label>Tên danh mục</label>
+                <InputText class="form-control" @bind-Value="category.Name" placeholder="Nhập tên danh mục" />
+    </div>
+
+            <div class="form-check">
+        <InputCheckbox class="form-check-input" @bind-Value="category.AllowRent" />
+        <label class="form-check-label">Cho phép thuê</label>
+    </div>
+
+            <div class="form-actions">
+                <button class="btn-save" type="submit">
+                    <i class="fas fa-save me-2"></i> Lưu
+    </button>
+                <button type="button" class="btn-cancel" @onclick="BackToList">
+                    <i class="fas fa-arrow-left me-2"></i> Quay lại
+    </button>
+            </div>
+</EditForm>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int? id { get; set; }
+
+    private Category category = new();
+
+    protected override void OnInitialized()
+    {
+        if (id.HasValue && id.Value != 0)
+        {
+            var existing = Context.Categories.FirstOrDefault(c => c.CategoryId == id.Value);
+            if (existing != null)
+            {
+                category = new Category
+                {
+                    CategoryId = existing.CategoryId,
+                    Name = existing.Name,
+                    AllowRent = existing.AllowRent
+                };
+            }
+        }
+    }
+
+    private void HandleValidSubmit()
+    {
+        if (category.CategoryId == 0)
+        {
+            // Thêm mới
+            Context.Categories.Add(category);
+        }
+        else
+        {
+            // Cập nhật
+            var existing = Context.Categories.FirstOrDefault(c => c.CategoryId == category.CategoryId);
+            if (existing != null)
+            {
+                existing.Name = category.Name;
+                existing.AllowRent = category.AllowRent;
+            }
+        }
+
+        Context.SaveChanges();
+        NavManager.NavigateTo("/admin/categories");
+    }
+
+    private void BackToList()
+    {
+        NavManager.NavigateTo("/admin/categories");
+    }
+}

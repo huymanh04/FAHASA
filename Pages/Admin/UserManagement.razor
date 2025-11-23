@@ -1,0 +1,499 @@
+@page "/admin/users"
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using SportsStore.Models
+@inject UserManager<ApplicationUser> UserManager
+@inject NavigationManager Navigation
+@inject ILogger<UserManagement> Logger
+@layout AdminLayout
+
+<style>
+    .users-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+
+    .page-title {
+        font-size: 2rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .search-add-bar {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 25px;
+        align-items: center;
+    }
+
+    .search-input {
+        flex: 1;
+        max-width: 400px;
+        padding: 12px 20px;
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .add-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .add-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .users-table {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .users-table table {
+        margin: 0;
+    }
+
+    .users-table thead {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .users-table thead th {
+        padding: 18px;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+        border: none;
+    }
+
+    .users-table tbody tr {
+        transition: all 0.3s ease;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .users-table tbody tr:hover {
+        background: #f8f9ff;
+        transform: scale(1.01);
+    }
+
+    .users-table tbody td {
+        padding: 18px;
+        vertical-align: middle;
+    }
+
+    .role-badge {
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+
+    .role-admin {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+    }
+
+    .role-user {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+    }
+
+    .edit-btn {
+        background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 0.85rem;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .edit-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        color: white;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 25px;
+    }
+
+    .page-btn {
+        padding: 10px 16px;
+        border: 2px solid #e0e0e0;
+        background: white;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .page-btn:hover {
+        border-color: #667eea;
+        color: #667eea;
+    }
+
+    .page-btn.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-color: transparent;
+    }
+
+    .user-form-card {
+        background: white;
+        border-radius: 16px;
+        padding: 30px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        margin-top: 25px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .form-control {
+        padding: 12px 16px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 25px;
+    }
+
+    .btn-save {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+    }
+
+    .btn-cancel {
+        background: #e0e0e0;
+        color: #333;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+    }
+</style>
+
+<div class="page-card">
+    <div class="users-header">
+        <h2 class="page-title">
+            <i class="fas fa-users"></i>
+            <span>Quản lý người dùng</span>
+        </h2>
+    </div>
+
+    <div class="search-add-bar">
+        <input class="search-input" placeholder="🔍 Tìm kiếm theo tên hoặc email..." @bind="searchTerm" />
+        <button class="add-btn" @onclick="ShowAddForm">
+            <i class="fas fa-plus"></i>
+            <span>Thêm người dùng</span>
+        </button>
+</div>
+
+@if (filteredUsers == null)
+{
+        <div class="text-center py-5">
+            <i class="fas fa-spinner fa-spin fa-2x text-muted"></i>
+            <p class="mt-3">Đang tải người dùng...</p>
+        </div>
+    }
+    else if (!pagedUsers.Any())
+    {
+        <div class="text-center py-5">
+            <i class="fas fa-user-slash fa-3x text-muted mb-3"></i>
+            <p>Không tìm thấy người dùng nào</p>
+        </div>
+}
+else
+{
+        <div class="users-table">
+            <table class="table table-hover mb-0">
+        <thead>
+            <tr>
+                <th>Họ tên</th>
+                <th>Email</th>
+                <th>Ngày sinh</th>
+                <th>Địa chỉ</th>
+                <th>Điện thoại</th>
+                <th>Quyền</th>
+                <th>Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var user in pagedUsers)
+        {
+            <tr>
+                            <td><strong>@user.FullName</strong></td>
+                <td>@user.Email</td>
+                            <td>@(user.BirthDate?.ToString("dd/MM/yyyy") ?? "N/A")</td>
+                            <td>@(user.Address ?? "N/A")</td>
+                            <td>@(user.PhoneNumber ?? "N/A")</td>
+                            <td>
+                                <span class="role-badge @(user.IsAdmin ? "role-admin" : "role-user")">
+                                    @(user.IsAdmin ? "👑 Admin" : "👤 User")
+                                </span>
+                            </td>
+                <td>
+                                <button class="edit-btn" @onclick="@(() => EditUser(user))">
+                                    <i class="fas fa-edit"></i>
+                                    <span>Sửa</span>
+                                </button>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+        </div>
+
+    <!-- Pagination -->
+        @if (totalPages > 1)
+        {
+            <div class="pagination">
+                @for (int i = 1; i <= totalPages; i++)
+                {
+                    <button class="page-btn @(i == currentPage ? "active" : "")" @onclick="@(() => GoToPage(i))">@i</button>
+        }
+    </div>
+}
+    }
+</div>
+
+<!-- Form thêm/sửa -->
+@if (showForm)
+{
+    <div class="user-form-card">
+    <EditForm Model="formUser" OnValidSubmit="HandleSubmit">
+        <DataAnnotationsValidator />
+            <ValidationSummary class="alert alert-danger" />
+            
+            <h4 class="mb-4">
+                <i class="fas fa-@(isEditMode ? "edit" : "user-plus") me-2"></i>
+                @(isEditMode ? "Sửa người dùng" : "Thêm người dùng mới")
+            </h4>
+
+            <div class="form-group">
+                <label>Họ tên:</label>
+                <InputText class="form-control" @bind-Value="formUser.FullName" />
+            </div>
+            <div class="form-group">
+                <label>Email:</label>
+                <InputText class="form-control" @bind-Value="formUser.Email" />
+            </div>
+            <div class="form-group">
+                <label>Ngày sinh:</label>
+                <InputDate class="form-control" @bind-Value="formUser.BirthDate" />
+            </div>
+            <div class="form-group">
+                <label>Địa chỉ:</label>
+                <InputText class="form-control" @bind-Value="formUser.Address" />
+            </div>
+            <div class="form-group">
+                <label>Số điện thoại:</label>
+                <InputText class="form-control" @bind-Value="formUser.PhoneNumber" />
+            </div>
+            <div class="form-group">
+                <label>
+                <InputCheckbox @bind-Value="formUser.IsAdmin" />
+                    <span class="ms-2">Là Admin</span>
+                </label>
+            </div>
+
+            @if (!isEditMode)
+            {
+                <div class="form-group">
+                    <label>Mật khẩu:</label>
+                    <InputText class="form-control" @bind-Value="newPassword" type="password" />
+                </div>
+            }
+
+            <div class="form-actions">
+                <button class="btn-save" type="submit">
+                    <i class="fas fa-save me-2"></i>Lưu
+                </button>
+                <button class="btn-cancel" type="button" @onclick="HideForm">
+                    <i class="fas fa-times me-2"></i>Hủy
+                </button>
+        </div>
+    </EditForm>
+    </div>
+}
+
+@code {
+    private List<ApplicationUser> users = new();
+    private List<ApplicationUser> filteredUsers = new();
+    private List<ApplicationUser> pagedUsers = new();
+
+    private ApplicationUser formUser = new();
+    private string newPassword = "";
+    private bool showForm = false;
+    private bool isEditMode = false;
+    private string _searchTerm = "";
+    private string searchTerm
+    {
+        get => _searchTerm;
+        set
+        {
+            _searchTerm = value;
+            ApplySearchAndPaging();
+        }
+    }
+
+    private int currentPage = 1;
+    private int pageSize = 5;
+    private int totalPages = 1;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsers();
+    }
+
+    private async Task LoadUsers()
+    {
+        users = await UserManager.Users.ToListAsync();
+        ApplySearchAndPaging();
+    }
+
+    private void ApplySearchAndPaging()
+    {
+        filteredUsers = users
+            .Where(u => string.IsNullOrWhiteSpace(searchTerm)
+                || (u.FullName != null && u.FullName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                || (u.Email != null && u.Email.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)))
+            .ToList();
+
+        totalPages = (int)Math.Ceiling(filteredUsers.Count / (double)pageSize);
+        currentPage = Math.Clamp(currentPage, 1, totalPages == 0 ? 1 : totalPages);
+        pagedUsers = filteredUsers.Skip((currentPage - 1) * pageSize).Take(pageSize).ToList();
+    }
+
+    private void GoToPage(int page)
+    {
+        currentPage = page;
+        ApplySearchAndPaging();
+    }
+
+    private void ShowAddForm()
+    {
+        formUser = new ApplicationUser();
+        newPassword = "";
+        isEditMode = false;
+        showForm = true;
+    }
+
+    private void EditUser(ApplicationUser user)
+    {
+        formUser = new ApplicationUser
+        {
+            Id = user.Id,
+            FullName = user.FullName,
+            Email = user.Email,
+            Address = user.Address,
+            BirthDate = user.BirthDate,
+            PhoneNumber = user.PhoneNumber,
+            IsAdmin = user.IsAdmin
+        };
+        isEditMode = true;
+        showForm = true;
+    }
+
+    private async Task HandleSubmit()
+    {
+        IdentityResult result;
+
+        if (isEditMode)
+        {
+            var user = await UserManager.FindByIdAsync(formUser.Id);
+            if (user != null)
+            {
+                user.FullName = formUser.FullName;
+                user.Email = formUser.Email;
+                user.UserName = formUser.Email;
+                user.Address = formUser.Address;
+                user.PhoneNumber = formUser.PhoneNumber;
+                user.BirthDate = formUser.BirthDate;
+                user.IsAdmin = formUser.IsAdmin;
+
+                result = await UserManager.UpdateAsync(user);
+            }
+            else return;
+        }
+        else
+        {
+            formUser.UserName = formUser.Email;
+            result = await UserManager.CreateAsync(formUser, newPassword);
+        }
+
+        if (result.Succeeded)
+        {
+            showForm = false;
+            await LoadUsers();
+        }
+        else
+        {
+            Logger.LogError("Lỗi: " + string.Join(", ", result.Errors.Select(e => e.Description)));
+        }
+    }
+
+    private void HideForm()
+    {
+        showForm = false;
+    }
+}

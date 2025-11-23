@@ -1,0 +1,266 @@
+@model SportsStore.Models.ProductReview
+
+@{
+    ViewData["Title"] = "Viết đánh giá";
+    var productName = ViewBag.ProductName ?? "Sản phẩm";
+}
+
+<style>
+    .review-container {
+        max-width: 900px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    .review-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 20px 20px 0 0;
+        box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+    }
+
+    .review-header h2 {
+        margin: 0;
+        font-size: 1.8rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .product-name-display {
+        font-size: 1.2rem;
+        margin-top: 10px;
+        opacity: 0.9;
+    }
+
+    .review-form-card {
+        background: white;
+        padding: 40px;
+        border-radius: 0 0 20px 20px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-section {
+        margin-bottom: 30px;
+    }
+
+    .form-section label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 12px;
+        display: block;
+        font-size: 1rem;
+    }
+
+    .star-rating {
+        display: flex;
+        gap: 8px;
+        font-size: 2.5rem;
+        direction: rtl;
+    }
+
+    .star-rating input[type="radio"] {
+        display: none;
+    }
+
+    .star-rating label {
+        cursor: pointer;
+        color: #ddd;
+        transition: all 0.2s ease;
+        margin: 0;
+        direction: ltr;
+    }
+
+    .star-rating label:hover,
+    .star-rating label:hover ~ label,
+    .star-rating input[type="radio"]:checked ~ label {
+        color: #ffd700;
+        transform: scale(1.1);
+    }
+
+    .form-control {
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        padding: 12px 16px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+
+    .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        outline: none;
+    }
+
+    textarea.form-control {
+        min-height: 150px;
+        resize: vertical;
+    }
+
+    .submit-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 15px 40px;
+        border-radius: 12px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        width: 100%;
+    }
+
+    .submit-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .cancel-btn {
+        background: #f5f5f5;
+        color: #666;
+        border: none;
+        padding: 15px 40px;
+        border-radius: 12px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 100%;
+        margin-top: 12px;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+    }
+
+    .cancel-btn:hover {
+        background: #e0e0e0;
+        color: #333;
+    }
+
+    .validation-summary {
+        background: #fee;
+        border: 2px solid #fcc;
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 20px;
+        color: #c33;
+    }
+
+    .text-danger {
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: 5px;
+        display: block;
+    }
+
+    .rating-selected {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-weight: 600;
+        margin-top: 10px;
+        font-size: 1.1rem;
+    }
+</style>
+
+<div class="review-container">
+    <div class="review-header">
+        <h2>
+            <i class="fas fa-star"></i>
+            Đánh giá sản phẩm
+        </h2>
+        <div class="product-name-display">
+            <i class="fas fa-box"></i> @productName
+        </div>
+    </div>
+
+    <div class="review-form-card">
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="validation-summary">
+                <div asp-validation-summary="All" class="text-danger"></div>
+            </div>
+        }
+
+        <form asp-action="Add" asp-controller="Reviews" method="post">
+            <input type="hidden" asp-for="ProductID" />
+            <input type="hidden" asp-for="UserId" />
+            <input type="hidden" asp-for="CustomerName" />
+
+            <div class="form-section">
+                <label>
+                    <i class="fas fa-star"></i> Đánh giá của bạn
+                </label>
+                <div class="star-rating">
+                    <input type="radio" id="star5" name="Rating" value="5" asp-for="Rating" />
+                    <label for="star5" title="5 sao"><i class="fas fa-star"></i></label>
+
+                    <input type="radio" id="star4" name="Rating" value="4" asp-for="Rating" />
+                    <label for="star4" title="4 sao"><i class="fas fa-star"></i></label>
+
+                    <input type="radio" id="star3" name="Rating" value="3" asp-for="Rating" />
+                    <label for="star3" title="3 sao"><i class="fas fa-star"></i></label>
+
+                    <input type="radio" id="star2" name="Rating" value="2" asp-for="Rating" />
+                    <label for="star2" title="2 sao"><i class="fas fa-star"></i></label>
+
+                    <input type="radio" id="star1" name="Rating" value="1" asp-for="Rating" />
+                    <label for="star1" title="1 sao"><i class="fas fa-star"></i></label>
+                </div>
+                <div class="rating-selected" id="ratingText"></div>
+                <span asp-validation-for="Rating" class="text-danger"></span>
+            </div>
+
+            <div class="form-section">
+                <label asp-for="Comment">
+                    <i class="fas fa-comment"></i> Nhận xét của bạn
+                </label>
+                <textarea asp-for="Comment" class="form-control" 
+                          placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm này..."></textarea>
+                <span asp-validation-for="Comment" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="submit-btn">
+                <i class="fas fa-paper-plane"></i> Gửi đánh giá
+            </button>
+            <a asp-action="Details" asp-controller="Home" asp-route-id="@Model.ProductID" class="cancel-btn">
+                <i class="fas fa-times"></i> Hủy bỏ
+            </a>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const stars = document.querySelectorAll('.star-rating input[type="radio"]');
+            const ratingText = document.getElementById('ratingText');
+
+            const ratingLabels = {
+                '1': '⭐ Rất tệ',
+                '2': '⭐⭐ Tệ',
+                '3': '⭐⭐⭐ Bình thường',
+                '4': '⭐⭐⭐⭐ Tốt',
+                '5': '⭐⭐⭐⭐⭐ Tuyệt vời'
+            };
+
+            stars.forEach(star => {
+                star.addEventListener('change', function() {
+                    ratingText.textContent = ratingLabels[this.value] || '';
+                });
+            });
+
+            // Hiển thị rating đã chọn nếu có lỗi validation
+            const checkedStar = document.querySelector('.star-rating input[type="radio"]:checked');
+            if (checkedStar) {
+                ratingText.textContent = ratingLabels[checkedStar.value] || '';
+            }
+        });
+    </script>
+}

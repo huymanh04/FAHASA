@@ -1,0 +1,371 @@
+@model SportsStore.Models.Order
+@inject Cart Cart
+@inject SportsStore.Models.StoreDbContext Db
+
+<!-- Bootstrap & FontAwesome -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+<style>
+    .checkout-card {
+        max-width: 1000px;
+        margin: 40px auto;
+        border-radius: 16px;
+        padding: 30px;
+        background: white;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-control, .form-check-input {
+        border-radius: 10px;
+        font-size: 16px;
+    }
+
+    .order-summary {
+        border-radius: 12px;
+        border: 1px solid #ccc;
+        padding: 16px;
+    }
+
+    .order-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+
+    .order-item img {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-right: 12px;
+    }
+
+    .total-line {
+        font-weight: bold;
+        font-size: 18px;
+        margin-top: 10px;
+    }
+
+    .btn-order {
+        background-color: #1e8141;
+        color: white;
+        font-weight: bold;
+        border-radius: 8px;
+        font-size: 18px;
+        padding: 12px 24px;
+    }
+
+    .btn-order:hover {
+        background-color: #166b36;
+    }
+</style>
+
+<div class="checkout-card row">
+    <div class="col-md-6 border-end">
+        <h3 class="text-danger fw-bold mb-4">FAHASA</h3>
+        <h5 class="mb-3">Thông tin giao hàng</h5>
+
+        <form asp-action="Checkout" method="post" novalidate>
+            <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+            <div class="mb-3">
+                <input asp-for="Name" class="form-control" placeholder="Họ và tên" required />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <input asp-for="Line1" class="form-control" placeholder="Địa chỉ" required />
+                <span asp-validation-for="Line1" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <input asp-for="Line2" class="form-control" placeholder="Email" required type="email" />
+                <span asp-validation-for="Line2" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <input asp-for="Line3" class="form-control" placeholder="Số điện thoại" required pattern="\d{8,15}" />
+                <span asp-validation-for="Line3" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <select id="province" name="State" class="form-control" required onchange="updateDistricts()">
+                    <option value="">Chọn Tỉnh/Thành*</option>
+                    <option value="TP.HCM">TP.HCM</option>
+                    <option value="Hà Nội">Hà Nội</option>
+                    <option value="Đà Nẵng">Đà Nẵng</option>
+                </select>
+                <span asp-validation-for="State" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <select id="district" name="City" class="form-control" required>
+                    <option value="">Chọn Quận/Huyện*</option>
+                </select>
+                <span asp-validation-for="City" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <input asp-for="Zip" class="form-control" placeholder="Mã bưu điện" required />
+                <span asp-validation-for="Zip" class="text-danger"></span>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-check">
+                    <input class="form-check-input" type="radio" name="Country" value="Thanh toán khi nhận hàng" checked required />
+                    <span class="form-check-label">Thanh toán khi nhận hàng</span>
+                </label>
+                <label class="form-check mt-2">
+                    <input class="form-check-input" type="radio" name="Country" value="Chuyển khoản" required />
+                    <span class="form-check-label">Chuyển khoản</span>
+                </label>
+                <span asp-validation-for="Country" class="text-danger"></span>
+            </div>
+
+            <div class="form-check mb-3">
+                <input asp-for="GiftWrap" class="form-check-input" />
+                <label class="form-check-label" asp-for="GiftWrap">Gói quà</label>
+            </div>
+
+            <div class="mb-3">
+                <input name="VoucherCode" id="voucherInput" class="form-control" placeholder="Nhập mã voucher (SALE5, SALE10, GIAM10K, GIAM50K1M)" oninput="validateVoucherInput()" />
+                @if(TempData["VoucherError"] != null){<small class="text-danger">@TempData["VoucherError"]</small>}
+                <small id="voucherValidationMsg" class="d-block mt-1"></small>
+            </div>
+
+            <button type="submit" class="btn btn-order w-100">ĐẶT HÀNG</button>
+        </form>
+        <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.3/jquery.validate.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.11/jquery.validate.unobtrusive.min.js"></script>
+        <script>
+const districtByProvince = {
+    'TP.HCM': [
+        'Quận 1', 'Quận 3', 'Quận 5', 'Quận 7', 'Quận 9', 'Quận 10', 'Quận Tân Bình', 'Quận Bình Thạnh', 'Huyện Củ Chi', 'Huyện Nhà Bè'
+    ],
+    'Hà Nội': [
+        'Quận Ba Đình', 'Quận Hoàn Kiếm', 'Quận Đống Đa', 'Quận Hai Bà Trưng', 'Quận Hoàng Mai', 'Quận Long Biên', 'Huyện Gia Lâm', 'Huyện Đông Anh'
+    ],
+    'Đà Nẵng': [
+        'Quận Hải Châu', 'Quận Thanh Khê', 'Quận Liên Chiểu', 'Quận Sơn Trà', 'Quận Cẩm Lệ', 'Huyện Hòa Vang'
+    ]
+};
+function updateDistricts() {
+    const p = document.getElementById('province').value;
+    const d = document.getElementById('district');
+    d.innerHTML = '<option value="">Chọn Quận/Huyện*</option>';
+    if(districtByProvince[p]) {
+        districtByProvince[p].forEach(area => {
+            d.innerHTML += `<option value="${area}">${area}</option>`;
+        });
+    }
+}
+</script>
+    </div>
+
+    <div class="col-md-6 ps-4">
+        <h5 class="mb-3">Đơn hàng của bạn</h5>
+        <div class="order-summary">
+            @foreach (var line in Cart.Lines)
+            {
+                var isRental = line.IsRental;
+                var price = isRental ? (line.Product.RentPrice ?? 0) : line.Product.Price;
+                var label = isRental ? "Thuê" : "Mua";
+                var unit = isRental ? $" × {line.RentalDays} ngày" : "";
+                var lineTotal = line.LineTotal;
+
+                <div class="order-item">
+                    <img src="/images/@(line.Product.Image ?? "default.jpg")" alt="@line.Product.Name" />
+                    <div>
+                        <div>@line.Product.Name (@label)</div>
+                        <small>@line.Quantity × @price.ToString("N0") đ @Html.Raw(unit)</small>
+                    </div>
+                    <div class="ms-auto">@lineTotal.ToString("N0") đ</div>
+                </div>
+            }
+            <hr />
+            <div class="d-flex justify-content-between total-line">
+                <div>TỔNG CỘNG:</div>
+                <div>@Cart.ComputeTotalValue().ToString("N0") đ</div>
+            </div>
+            <div class="mt-2 text-muted" style="font-size:14px;">
+                *Giảm giá sẽ áp dụng sau khi xác nhận nếu mã hợp lệ.
+            </div>
+            <div id="voucherSection" class="mt-3">
+                <div class="fw-semibold mb-2"><i class="fa fa-ticket-alt me-2 text-danger"></i>Mã giảm giá hôm nay</div>
+                <div id="voucherList" style="display:block;">
+                    <div class="p-2 rounded bg-light mb-2" style="font-size:13px;">Chọn một mã để tự động điền. Những mã hết lượt sẽ bị làm mờ.</div>
+                    <div id="voucherItems">
+                        @{ 
+                            var userId = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value; 
+                            var today = DateTime.UtcNow.Date; 
+                            int diff = (7 + (today.DayOfWeek - DayOfWeek.Monday)) % 7; 
+                            var weekStart = today.AddDays(-diff); 
+                            var vouchers = Db.Vouchers.Where(v => v.IsActive).OrderBy(v => v.Code).ToList(); 
+                            var userUsage = string.IsNullOrEmpty(userId) ? new List<SportsStore.Models.VoucherUserUsage>() : Db.VoucherUserUsages.Where(u => u.UserId == userId).ToList(); 
+                        }
+                        @if(vouchers.Count == 0){<div class="text-muted">Không có mã giảm giá khả dụng.</div>} else {
+                            foreach (var v in vouchers)
+                            {
+                                var dailyUse = userUsage.FirstOrDefault(u => u.VoucherId == v.Id && u.PeriodType == "Daily" && u.PeriodStartDate == today)?.UsageCount ?? 0;
+                                var weeklyUse = userUsage.FirstOrDefault(u => u.VoucherId == v.Id && u.PeriodType == "Weekly" && u.PeriodStartDate == weekStart)?.UsageCount ?? 0;
+                                var dailyRemain = v.PerUserDailyLimit > 0 ? (v.PerUserDailyLimit - dailyUse) : -1;
+                                var weeklyRemain = v.PerUserWeeklyLimit > 0 ? (v.PerUserWeeklyLimit - weeklyUse) : -1;
+                                var globalRemain = v.DailyLimit > 0 ? (v.DailyLimit - v.DailyUsedCount) : -1;
+                                var disabled = (globalRemain == 0) || (dailyRemain == 0) || (weeklyRemain == 0);
+                                <div class="voucher-item @(disabled?"unavailable":"")">
+                                    <div class="voucher-left">
+                                        <div class="voucher-code">@v.Code</div>
+                                        <div class="voucher-desc">Giảm: <strong>@(v.DiscountType == SportsStore.Models.VoucherDiscountType.Percentage ? (v.Value*100).ToString("F0") + "%" : string.Format("{0:N0} đ", v.Value))</strong> · @(v.MinOrderTotal.HasValue && v.MinOrderTotal.Value>0? "Đơn từ " + v.MinOrderTotal.Value.ToString("N0") + " đ" : "Không yêu cầu tối thiểu")</div>
+                                        <div class="voucher-remaining">@(globalRemain < 0 ? "Không giới hạn" : (globalRemain > 0 ? $"Còn {globalRemain} lượt hôm nay (toàn hệ thống)" : "Hết lượt toàn hệ thống"))</div>
+                                        <div class="voucher-remaining">@(v.PerUserDailyLimit>0? $"Cá nhân hôm nay: {dailyUse}/{v.PerUserDailyLimit} (còn {(dailyRemain<0?0:dailyRemain)})" : "Không giới hạn cá nhân theo ngày")</div>
+                                        <div class="voucher-remaining">@(v.PerUserWeeklyLimit>0? $"Tuần: {weeklyUse}/{v.PerUserWeeklyLimit} (còn {(weeklyRemain<0?0:weeklyRemain)})" : "Không giới hạn cá nhân theo tuần")</div>
+                                    </div>
+                                    <div><button type="button" class="voucher-apply-btn" @(disabled?"disabled":null) data-code="@v.Code" data-min="@(v.MinOrderTotal ?? 0)" data-type="@v.DiscountType" data-value="@v.Value" onclick="window.applyVoucher && window.applyVoucher(this,'@v.Code')">Dùng</button></div>
+                                    @if(disabled){<div class="voucher-badge">@(globalRemain==0?"HẾT LƯỢT":(dailyRemain==0?"HẾT NGÀY":(weeklyRemain==0?"HẾT TUẦN":"")))</div>}
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .voucher-item {border:1px solid #e0e0e0; border-radius:10px; padding:12px 14px; margin-bottom:10px; display:flex; gap:14px; align-items:center; background:#fff; position:relative; overflow:hidden;}
+    .voucher-item.unavailable {opacity:0.45; filter:grayscale(0.3);}    
+    .voucher-left {flex:1;}
+    .voucher-code {font-weight:700; font-size:15px; color:#d63384; letter-spacing:0.5px;}
+    .voucher-desc {font-size:13px; color:#555;}
+    .voucher-remaining {font-size:12px; color:#666; margin-top:4px;}
+    .voucher-apply-btn {background:linear-gradient(135deg,#ff7b54,#ffb26b); border:none; color:#fff; font-weight:600; padding:8px 14px; border-radius:8px; font-size:13px;}
+    .voucher-apply-btn:hover {filter:brightness(1.08);}    
+    .voucher-badge {position:absolute; top:0; right:0; background:#ff3d71; color:#fff; font-size:11px; padding:4px 8px; border-bottom-left-radius:8px; font-weight:600;}
+</style>
+
+<script>
+    let vouchersLoaded = false;
+    let voucherCache = [];
+    // Đảm bảo số không có dấu phẩy gây SyntaxError trong JS
+    const cartTotal = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Cart.ComputeTotalValue()));
+    const orderBtn = document.querySelector('.btn-order');
+    // Tự động luôn hiển thị danh sách voucher — bỏ nút toggle
+    async function loadVouchers(){
+        try{
+            const res = await fetch('/Voucher/active');
+            const data = await res.json();
+            vouchersLoaded = true;
+            voucherCache = data;
+            renderVouchers(data);
+            validateVoucherInput(); // re-validate if user typed before load
+        }catch(e){
+            document.getElementById('voucherItems').innerHTML = '<div class="text-danger">Lỗi tải voucher.</div>';
+        }
+    }
+    function renderVouchers(list){
+        if(!Array.isArray(list) || list.length===0){
+            document.getElementById('voucherItems').innerHTML = '<div class="text-muted">Không có mã giảm giá khả dụng.</div>';
+            return;
+        }
+        const html = list.map(v => {
+            const globalRemainingText = v.remaining < 0 ? 'Không giới hạn' : (v.remaining > 0 ? `Còn ${v.remaining} lượt hôm nay (toàn hệ thống)` : 'Hết lượt toàn hệ thống');
+            const typeLabel = v.type === 'Percentage' ? `${(v.value*100).toFixed(0)}%` : `${v.value.toLocaleString('vi-VN')} đ`;
+            const minLabel = v.min > 0 ? `Đơn từ ${v.min.toLocaleString('vi-VN')} đ` : 'Không yêu cầu tối thiểu';
+            const perUserDailyInfo = v.perUserDailyLimit > 0 ? `Cá nhân hôm nay: ${v.userDailyUsed}/${v.perUserDailyLimit} (còn ${v.userDailyRemaining < 0 ? 0 : v.userDailyRemaining})` : 'Không giới hạn cá nhân theo ngày';
+            const perUserWeeklyInfo = v.perUserWeeklyLimit > 0 ? `Tuần: ${v.userWeeklyUsed}/${v.perUserWeeklyLimit} (còn ${v.userWeeklyRemaining < 0 ? 0 : v.userWeeklyRemaining})` : 'Không giới hạn cá nhân theo tuần';
+            const reachedUserDaily = v.perUserDailyLimit > 0 && v.userDailyRemaining <= 0;
+            const reachedUserWeekly = v.perUserWeeklyLimit > 0 && v.userWeeklyRemaining <= 0;
+            const disabled = v.remaining === 0 || reachedUserDaily || reachedUserWeekly;
+            const badge = v.remaining===0 ? 'HẾT LƯỢT' : (reachedUserDaily ? 'HẾT NGÀY' : (reachedUserWeekly ? 'HẾT TUẦN' : ''));
+            return `<div class="voucher-item ${disabled? 'unavailable':''}">
+                <div class="voucher-left">
+                    <div class="voucher-code">${v.code}</div>
+                    <div class="voucher-desc">Giảm: <strong>${typeLabel}</strong> · ${minLabel}</div>
+                    <div class="voucher-remaining">${globalRemainingText}</div>
+                    <div class="voucher-remaining">${perUserDailyInfo}</div>
+                    <div class="voucher-remaining">${perUserWeeklyInfo}</div>
+                </div>
+                <div><button type="button" class="voucher-apply-btn" ${disabled? 'disabled':''} data-code="${v.code}" data-min="${v.min}" onclick="window.applyVoucher && window.applyVoucher(this,'${v.code}')">Dùng</button></div>
+                ${badge? `<div class="voucher-badge">${badge}</div>`:''}
+            </div>`;
+        }).join('');
+        document.getElementById('voucherItems').innerHTML = html;
+    }
+    // Gắn vào window để inline onclick truy cập được
+    window.applyVoucher = function(el, code){
+        try {
+            // Cho phép gọi với chỉ mã: applyVoucher('SALE10')
+            if(typeof el === 'string' && !code){
+                code = el;
+                el = null;
+            }
+            if(!code && el){
+                code = el.getAttribute('data-code');
+            }
+            if(!code){
+                console.warn('applyVoucher: thiếu mã.');
+                return;
+            }
+            const min = parseFloat(el?.getAttribute('data-min')||'0');
+            if(min>0 && cartTotal < min){
+                const msgEl = document.getElementById('voucherValidationMsg');
+                msgEl.textContent = `Đơn hàng (${cartTotal.toLocaleString('vi-VN')} đ) chưa đủ mức tối thiểu ${min.toLocaleString('vi-VN')} đ cho mã ${code}.`;
+                msgEl.classList.remove('text-success');
+                msgEl.classList.add('text-danger');
+                orderBtn.setAttribute('disabled','disabled');
+                return; // không tự điền vì không đủ điều kiện
+            }
+            const input = document.getElementById('voucherInput');
+            if(input){
+                input.value = code;
+                input.focus();
+                validateVoucherInput();
+            }
+        } catch(e){
+            console.error('applyVoucher error', e);
+        }
+    };
+
+    function validateVoucherInput(){
+        const msgEl = document.getElementById('voucherValidationMsg');
+        const code = (document.getElementById('voucherInput')?.value || '').trim().toUpperCase();
+        if(!code){
+            msgEl.textContent='';
+            orderBtn.removeAttribute('disabled');
+            return;
+        }
+        if(!vouchersLoaded){ // load first time if user types before open list
+            loadVouchers();
+            msgEl.textContent='Đang kiểm tra mã...';
+            return;
+        }
+        const voucher = voucherCache.find(v => v.code === code);
+        if(!voucher){
+            msgEl.textContent='Mã không tồn tại hoặc chưa hoạt động.';
+            orderBtn.setAttribute('disabled','disabled');
+            return;
+        }
+        // Check min order requirement
+        if(voucher.min > 0 && cartTotal < voucher.min){
+            msgEl.textContent = `Đơn hàng bạn (${cartTotal.toLocaleString('vi-VN')} đ) chưa đạt mức tối thiểu ${voucher.min.toLocaleString('vi-VN')} đ để dùng mã này.`;
+            orderBtn.setAttribute('disabled','disabled');
+            return;
+        }
+        // Global remaining/ per-user remaining checks (optional disabling)
+        if((voucher.remaining === 0) || (voucher.perUserDailyLimit>0 && voucher.userDailyRemaining<=0) || (voucher.perUserWeeklyLimit>0 && voucher.userWeeklyRemaining<=0)){
+            msgEl.textContent='Mã đã hết lượt sử dụng.';
+            orderBtn.setAttribute('disabled','disabled');
+            return;
+        }
+        msgEl.textContent='Có thể dùng mã này.';
+        msgEl.classList.remove('text-danger');
+        msgEl.classList.add('text-success');
+        orderBtn.removeAttribute('disabled');
+    }
+
+    // Preload vouchers on page load for instant validation
+    document.addEventListener('DOMContentLoaded', ()=>{ loadVouchers(); });
+</script>

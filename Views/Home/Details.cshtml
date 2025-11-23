@@ -1,0 +1,139 @@
+@model SportsStore.Models.ViewModels.ProductDetailsViewModel
+@{
+    ViewData["Title"] = Model.Product.Name;
+    Layout = "_Layout";
+}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+<div class="container my-4">
+  <div class="row g-4">
+        <!-- Ảnh sản phẩm -->
+    <div class="col-md-5">
+      <div class="card p-2">
+        <div id="productCarousel" class="carousel slide" data-bs-ride="carousel">
+        <div class="carousel-inner">
+            @for (int i = 0; i < Model.ProductImages.Count; i++) {
+                <div class="carousel-item @(i == 0 ? "active" : "")">
+                <img src="~/images/@Model.ProductImages[i].ImageUrl" class="d-block w-100" style="max-height:400px;object-fit:contain" alt="Ảnh sản phẩm">
+                </div>
+            }
+        </div>
+          @if (Model.ProductImages.Count > 1) {
+        <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev">
+              <span class="carousel-control-prev-icon"></span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#productCarousel" data-bs-slide="next">
+              <span class="carousel-control-next-icon"></span>
+        </button>
+          }
+    </div>
+        <div class="d-flex flex-wrap mt-2 gap-2 justify-content-center">
+          @for (int i = 0; i < Model.ProductImages.Count; i++) {
+            <img src="~/images/@Model.ProductImages[i].ImageUrl"
+                 style="width:65px;height:65px;object-fit:cover;cursor:pointer;box-shadow:0 2px 6px #ccc;border-radius:6px;border:@(i==0?"2.5px solid #3572b0":"1.5px solid #ccc")"
+                 data-bs-target="#productCarousel" data-bs-slide-to="@i" />
+        }
+    </div>
+</div>
+</div>
+    <!-- Thông tin -->
+    <div class="col-md-7">
+      <div class="card p-4 h-100">
+        <h2 class="fw-bold mb-2">@Model.Product.Name</h2>
+        <div class="d-flex flex-wrap gap-3 align-items-center mb-2">
+          <span class="fs-3 text-danger fw-semibold">@Model.Product.Price.ToString("N0") đ</span>
+          @if (Model.Product.Category != null) {
+            <span class="badge bg-primary">@Model.Product.Category.Name</span>
+          }
+          @if (Model.Product.Author != null) {
+            <span class="badge bg-secondary"><i class="fa fa-user me-1"></i>@Model.Product.Author.Name</span>
+          }
+            </div>
+        <div class="mb-2"><strong>Mã SP:</strong> <span>@(Model.Product.ProductID ?? 0)</span></div>
+        <p class="text-muted">@Model.Product.Description</p>
+        <form method="post" asp-page="/Cart" class="d-flex gap-2 align-items-end mb-4">
+          <input type="hidden" name="productId" value="@Model.Product.ProductID">
+          <input type="hidden" name="returnUrl" value="@ViewContext.HttpContext.Request.Path + ViewContext.HttpContext.Request.QueryString" />
+          <button type="submit" name="mode" value="buy" class="btn btn-primary px-4"><i class="fas fa-cart-plus me-1"></i>Thêm vào giỏ</button>
+          <button type="submit" name="mode" value="buynow" class="btn btn-danger px-4">Mua ngay</button>
+        </form>
+        <div class="small text-muted mb-1">Tình trạng: <span class="text-success fw-medium">@((Model.Product.Quantity > 0) ? "Còn hàng" : "Hết hàng")</span></div>
+        <div class="small"><i class="fa fa-check-circle text-success"></i> Cam kết 100% hàng chính hãng</div>
+        </div>
+    </div>
+</div>
+  <!-- Tabs Thông tin/Review/Liên quan -->
+  <div class="card mt-4 p-4">
+    <ul class="nav nav-tabs mb-3" id="tabPanelProduct" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="tabinfo" data-bs-toggle="tab" data-bs-target="#info" type="button" role="tab">Thông tin chi tiết</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tabreview" data-bs-toggle="tab" data-bs-target="#review" type="button" role="tab">Đánh giá</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tabrelated" data-bs-toggle="tab" data-bs-target="#related" type="button" role="tab">Sản phẩm liên quan</button>
+      </li>
+    </ul>
+    <div class="tab-content mt-3">
+      <!-- Tab 1: Thông tin -->
+      <div class="tab-pane fade show active" id="info" role="tabpanel">
+        <div class="row">
+          <div class="col-md-7">
+            <ul class="list-group list-group-flush mb-2">
+              <li class="list-group-item"><b>Tên sách:</b> @Model.Product.Name</li>
+              @if(Model.Product.Author != null) {
+                <li class="list-group-item"><b>Tác giả:</b> @Model.Product.Author.Name</li>
+              }
+              @if(Model.Product.Category != null) {
+                <li class="list-group-item"><b>Danh mục:</b> @Model.Product.Category.Name</li>
+              }
+              <li class="list-group-item"><b>Giá:</b> <span class="text-danger">@Model.Product.Price.ToString("N0") đ</span></li>
+              <li class="list-group-item"><b>Mô tả:</b> @Model.Product.Description</li>
+              <li class="list-group-item"><b>Số lượng còn:</b> @Model.Product.Quantity</li>
+              @if(!string.IsNullOrWhiteSpace(Model.Product.Image)) {
+                <li class="list-group-item"><b>Ảnh đại diện:</b> <img src="~/images/@Model.Product.Image" style="width:100px;border-radius:6px;border:1.5px solid #ccc;" /></li>
+              }
+            </ul>
+          </div>
+        </div>
+      </div>
+      <!-- Tab 2: Đánh giá -->
+      <div class="tab-pane fade" id="review" role="tabpanel">
+        <h5>Đánh giá sản phẩm</h5>
+        @if (Model.Reviews != null && Model.Reviews.Any()) {
+          @foreach (var review in Model.Reviews) {
+            <div class="card mb-2 shadow-sm border-0">
+                <div class="card-body">
+                <h6 class="card-title"><i class="fa fa-user me-1"></i>@review.CustomerName</h6>
+                <div class="mb-2">@review.Comment</div>
+                    <small class="text-muted">@review.Date.ToString("dd/MM/yyyy")</small>
+                </div>
+            </div>
+        }
+        } else {
+          <div class="text-muted">Chưa có đánh giá nào.</div>
+    }
+</div>
+      <!-- Tab 3: Sản phẩm liên quan -->
+      <div class="tab-pane fade" id="related" role="tabpanel">
+                        <div class="row">
+          @foreach(var item in Model.RelatedProducts.Take(8)) {
+            <div class="col-md-3 col-6 mb-4">
+              <div class="card h-100 border-0 shadow-sm">
+                <img src="/images/@(string.IsNullOrEmpty(item.Image) ? "default.jpg" : item.Image)" class="card-img-top" style="height:170px;object-fit:cover;border-radius:8px 8px 0 0;" />
+                <div class="card-body p-2">
+                  <h6 class="card-title mb-1 text-truncate">@item.Name</h6>
+                  <div class="text-danger mb-2" style="font-size:1rem">@item.Price.ToString("N0") đ</div>
+                  <a asp-controller="Home" asp-action="Details" asp-route-id="@item.ProductID" class="btn btn-outline-primary btn-sm w-100">Xem chi tiết</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+    </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+

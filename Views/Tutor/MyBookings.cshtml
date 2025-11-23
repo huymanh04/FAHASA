@@ -1,0 +1,347 @@
+@model List<SportsStore.Models.TutorBooking>
+
+@{
+    Layout = "_ProfileLayout";
+    ViewData["Title"] = "Lịch sử thuê gia sư";
+}
+
+<style>
+    .bookings-header {
+        text-align: center;
+        margin-bottom: 40px;
+        padding-bottom: 30px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .bookings-header h2 {
+        font-size: 2rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 20px;
+    }
+
+    .booking-card {
+        background: white;
+        border-radius: 20px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e0e0e0;
+        transition: all 0.3s ease;
+    }
+
+    .booking-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+    }
+
+    .booking-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #f0f0f0;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .tutor-name {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .tutor-name i {
+        color: #667eea;
+    }
+
+    .tutor-subject {
+        color: #666;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .booking-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .info-label {
+        font-size: 0.85rem;
+        color: #666;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .info-value {
+        font-size: 1rem;
+        color: #333;
+        font-weight: 600;
+    }
+
+    .status-badge {
+        padding: 8px 20px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        display: inline-block;
+    }
+
+    .status-confirmed {
+        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        color: white;
+    }
+
+    .status-pending {
+        background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        color: white;
+    }
+
+    .status-paid {
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        color: white;
+    }
+
+    .total-price {
+        font-size: 1.5rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .notes-section {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 12px;
+        margin-top: 15px;
+        border-left: 4px solid #667eea;
+    }
+
+    .notes-label {
+        font-size: 0.85rem;
+        color: #666;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+    }
+
+    .notes-content {
+        color: #333;
+        font-size: 0.95rem;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    }
+
+    .empty-state-icon {
+        font-size: 4rem;
+        color: #ccc;
+        margin-bottom: 20px;
+    }
+
+    .empty-state h5 {
+        color: #666;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+
+    .empty-state p {
+        color: #999;
+    }
+
+    .payment-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid #f0f0f0;
+    }
+
+    .payment-badge {
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .payment-paid {
+        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        color: white;
+    }
+
+    .payment-unpaid {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        color: white;
+    }
+
+    @@media (max-width: 768px) {
+        .booking-header {
+            flex-direction: column;
+        }
+
+        .booking-info {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="bookings-header">
+    <h2>
+        <i class="fas fa-calendar-check me-2"></i>
+        Lịch sử thuê gia sư của bạn
+    </h2>
+</div>
+
+@if (Model == null || !Model.Any())
+{
+    <div class="empty-state">
+        <div class="empty-state-icon">
+            <i class="fas fa-user-graduate"></i>
+        </div>
+        <h5>Bạn chưa thuê gia sư nào</h5>
+        <p>Hãy tìm kiếm gia sư phù hợp và đặt lịch học ngay hôm nay!</p>
+    </div>
+}
+else
+{
+    foreach (var booking in Model)
+    {
+        <div class="booking-card">
+            <div class="booking-header">
+                <div>
+                    <div class="tutor-name">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                        @(booking.Tutor?.Name ?? "Không có")
+                    </div>
+                    <div class="tutor-subject">
+                        <i class="fas fa-book-open"></i>
+                        @(booking.Tutor?.Subject ?? "Không có")
+                    </div>
+                </div>
+                <div>
+                    <span class="status-badge @(booking.IsConfirmed ? "status-confirmed" : "status-pending")">
+                        @(booking.IsConfirmed ? "Đã xác nhận" : "Chờ xác nhận")
+                    </span>
+                </div>
+            </div>
+
+            <div class="booking-info">
+                <div class="info-item">
+                    <span class="info-label">
+                        <i class="fas fa-calendar-alt me-1"></i>
+                        Ngày học
+                    </span>
+                    <span class="info-value">@booking.BookingDate.ToString("dd/MM/yyyy")</span>
+                </div>
+
+                <div class="info-item">
+                    <span class="info-label">
+                        <i class="fas fa-clock me-1"></i>
+                        Số giờ
+                    </span>
+                    <span class="info-value">@booking.DurationHours giờ/ngày</span>
+                </div>
+
+                <div class="info-item">
+                    <span class="info-label">
+                        <i class="fas fa-calendar-check me-1"></i>
+                        Số ngày
+                    </span>
+                    <span class="info-value">@booking.NumberOfDays ngày</span>
+                </div>
+
+                @if (booking.StartTime.HasValue)
+            {
+                    <div class="info-item">
+                        <span class="info-label">
+                            <i class="fas fa-play-circle me-1"></i>
+                            Bắt đầu
+                        </span>
+                        <span class="info-value">@booking.StartTime.Value.ToString("dd/MM/yyyy HH:mm")</span>
+                    </div>
+                }
+
+                @if (booking.EndTime.HasValue)
+                {
+                    <div class="info-item">
+                        <span class="info-label">
+                            <i class="fas fa-stop-circle me-1"></i>
+                            Kết thúc
+                        </span>
+                        <span class="info-value">@booking.EndTime.Value.ToString("dd/MM/yyyy HH:mm")</span>
+                    </div>
+                }
+            </div>
+
+            @if (!string.IsNullOrEmpty(booking.Notes))
+            {
+                <div class="notes-section">
+                    <div class="notes-label">
+                        <i class="fas fa-sticky-note me-1"></i>
+                        Ghi chú
+                    </div>
+                    <div class="notes-content">@booking.Notes</div>
+                </div>
+            }
+
+            <div class="d-flex justify-content-between align-items-center mt-3 pt-3" style="border-top: 2px solid #f0f0f0;">
+                <div>
+                    <div class="info-label mb-2">Tổng giá</div>
+                    <div class="total-price">
+                        @string.Format("{0:N0} đ", booking.TotalPrice)
+                    </div>
+                </div>
+                <div class="payment-info">
+                    @if (booking.IsPaid)
+                        {
+                        <span class="payment-badge payment-paid">
+                            <i class="fas fa-check-circle me-1"></i>
+                            Đã thanh toán
+                        </span>
+                        @if (!string.IsNullOrEmpty(booking.PaymentMethod))
+                        {
+                            <span class="text-muted small">
+                                <i class="fas fa-credit-card me-1"></i>
+                                @booking.PaymentMethod
+                            </span>
+                        }
+                        }
+                        else
+                        {
+                        <span class="payment-badge payment-unpaid">
+                            <i class="fas fa-exclamation-circle me-1"></i>
+                            Chưa thanh toán
+                        </span>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+}

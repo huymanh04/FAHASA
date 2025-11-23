@@ -1,0 +1,534 @@
+@model IEnumerable<SportsStore.Models.Order>
+@using SportsStore.Models
+@using System.Security.Claims
+
+@{
+    ViewData["Title"] = "Đơn hàng của tôi";
+    Layout = "_ProfileLayout";
+
+    var currentStatus = Context.Request.Query["status"];
+    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+}
+
+<style>
+    .orders-header {
+        text-align: center;
+        margin-bottom: 40px;
+        padding-bottom: 30px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .orders-header h4 {
+        font-size: 2rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 20px;
+    }
+
+    .status-tabs {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 30px;
+        padding: 0;
+        list-style: none;
+    }
+
+    .status-tab {
+        padding: 12px 24px;
+        border-radius: 25px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        border: 2px solid #e0e0e0;
+        background: white;
+        color: #333;
+        display: inline-block;
+    }
+
+    .status-tab:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        border-color: #667eea;
+        color: #667eea;
+    }
+
+    .status-tab.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-color: transparent;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .order-card {
+        background: white;
+        border-radius: 20px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e0e0e0;
+        transition: all 0.3s ease;
+    }
+
+    .order-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+    }
+
+    .order-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #f0f0f0;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .order-info h5 {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 8px;
+    }
+
+    .order-info p {
+        color: #666;
+        margin: 0;
+        font-size: 0.95rem;
+    }
+
+    .order-status-badge {
+        padding: 8px 20px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        display: inline-block;
+    }
+
+    .product-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 12px;
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+    }
+
+    .product-item:hover {
+        background: #f0f0f0;
+        transform: translateX(5px);
+    }
+
+    .product-image {
+        width: 80px;
+        height: 80px;
+        border-radius: 10px;
+        object-fit: cover;
+        border: 2px solid #e0e0e0;
+    }
+
+    .product-details {
+        flex: 1;
+    }
+
+    .product-name {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 5px;
+    }
+
+    .product-quantity {
+        color: #666;
+        font-size: 0.9rem;
+    }
+
+    .product-price {
+        font-weight: 700;
+        font-size: 1.1rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .order-total {
+        text-align: right;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 2px solid #f0f0f0;
+    }
+
+    .order-total-label {
+        font-size: 1.1rem;
+        color: #666;
+        margin-right: 10px;
+    }
+
+    .order-total-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .order-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 15px;
+    }
+
+    .btn-action {
+        padding: 10px 20px;
+        border-radius: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-details {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-details:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+
+    .btn-cancel {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
+    }
+
+    .btn-cancel:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
+        color: white;
+    }
+
+    .btn-success-action {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+    }
+
+    .btn-success-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(79, 172, 254, 0.4);
+        color: white;
+    }
+
+    .btn-warning-action {
+        background: linear-gradient(135deg, #fad961 0%, #f76b1c 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(247, 107, 28, 0.3);
+    }
+
+    .btn-warning-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(247, 107, 28, 0.4);
+        color: white;
+    }
+
+    .btn-review {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .btn-review:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
+        color: white;
+    }
+
+    .badge-reviewed {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    }
+
+    .empty-state-icon {
+        font-size: 4rem;
+        color: #ccc;
+        margin-bottom: 20px;
+    }
+
+    .empty-state h5 {
+        color: #666;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+
+    .empty-state p {
+        color: #999;
+    }
+
+    @@media (max-width: 768px) {
+        .order-header {
+            flex-direction: column;
+        }
+
+        .order-actions {
+            flex-direction: column;
+        }
+
+        .btn-action {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+
+<div class="orders-header">
+    <h4>
+        <i class="fas fa-box me-2"></i>
+        Đơn hàng của tôi
+    </h4>
+</div>
+
+    <!-- Tabs trạng thái đơn hàng -->
+<ul class="status-tabs">
+        @foreach (OrderStatus status in Enum.GetValues(typeof(OrderStatus)))
+        {
+            var isActive = currentStatus == status.ToString();
+        <li>
+            <a class="status-tab @(isActive ? "active" : "")"
+               href="@Url.Action("MyOrders", new { status = status })">
+                    @GetStatusText(status)
+                </a>
+            </li>
+        }
+    </ul>
+
+    @if (!Model.Any())
+    {
+    <div class="empty-state">
+        <div class="empty-state-icon">
+            <i class="fas fa-shopping-bag"></i>
+        </div>
+        <h5>Bạn chưa có đơn hàng nào ở trạng thái này</h5>
+        <p>Hãy tiếp tục mua sắm để xem đơn hàng của bạn tại đây!</p>
+    </div>
+    }
+    else
+    {
+        foreach (var order in Model)
+        {
+        <div class="order-card">
+            <div class="order-header">
+                <div class="order-info">
+                    <h5>Đơn hàng #@order.OrderID</h5>
+                    <p>
+                        <i class="fas fa-calendar-alt me-2"></i>
+                        @order.OrderDate.ToString("dd/MM/yyyy HH:mm")
+                    </p>
+                </div>
+                    <div>
+                    <span class="order-status-badge @GetBadgeClass(order.Status)">
+                        @GetStatusText(order.Status)
+                    </span>
+                </div>
+            </div>
+
+            <div class="order-items">
+                @foreach (var line in order.Lines)
+                {
+                    <div class="product-item">
+                        <img src="@(string.IsNullOrEmpty(line.Product.Image) ? "/images/default.jpg" : line.Product.Image)" 
+                             alt="@line.Product.Name" 
+                             class="product-image" />
+                        <div class="product-details">
+                            <div class="product-name">@line.Product.Name</div>
+                            <div class="product-quantity">
+                                <i class="fas fa-shopping-cart me-1"></i>
+                                Số lượng: @line.Quantity
+                            </div>
+                            @if (order.Status == OrderStatus.DaNhanHang)
+                            {
+                                // Kiểm tra xem khách hàng đã đánh giá sản phẩm này chưa
+                                var productId = line.Product.ProductID;
+                                var context = ViewContext.HttpContext.RequestServices.GetService<StoreDbContext>();
+                                var isReviewed = context?.ProductReviews
+                                    .Any(r => r.UserId == userId && r.ProductID == productId) ?? false;
+                                
+                                <div class="mt-2">
+                                    @if (!isReviewed)
+                                    {
+                                        <a asp-controller="Reviews" 
+                                           asp-action="Add"
+                                           asp-route-productId="@productId"
+                                           class="btn-review">
+                                            <i class="fas fa-star"></i>
+                                            Viết đánh giá
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-reviewed">
+                                            <i class="fas fa-check-circle"></i>
+                                            Đã đánh giá
+                                        </span>
+                                    }
+                                </div>
+                            }
+                        </div>
+                        <div class="product-price">
+                            @string.Format("{0:N0} đ", line.Product.Price * line.Quantity)
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="order-total">
+                @{
+                    var originalSum = order.Lines.Sum(l => l.Product.Price * l.Quantity);
+                    var hasDiscount = order.DiscountAmount > 0 && (order.FinalAmount > 0 || order.TotalAmount > 0);
+                    var finalTotal = order.FinalAmount > 0 ? order.FinalAmount : (order.TotalAmount > 0 ? order.TotalAmount : originalSum);
+                }
+                <div class="text-end">
+                    @if (hasDiscount)
+                    {
+                        <div class="text-muted" style="font-size:0.85rem;">Tạm tính: @string.Format("{0:N0} đ", originalSum)</div>
+                        <div class="text-danger" style="font-size:0.85rem;">Giảm (@order.VoucherCode): -@string.Format("{0:N0} đ", order.DiscountAmount)</div>
+                    }
+                    <span class="order-total-label">Tổng tiền:</span>
+                    <span class="order-total-value">@string.Format("{0:N0} đ", finalTotal)</span>
+                </div>
+            </div>
+
+            <div class="order-actions">
+                            <a href="@Url.Action("Details", "Order", new { id = order.OrderID })"
+                   class="btn-action btn-details">
+                    <i class="fas fa-eye"></i>
+                    Chi tiết đơn hàng
+                            </a>
+
+                            @if (order.Status == OrderStatus.ChoXacNhan)
+                            {
+                                <form asp-action="Cancel" asp-controller="Order" method="post" class="d-inline">
+                                    <input type="hidden" name="id" value="@order.OrderID" />
+                        <button type="submit" class="btn-action btn-cancel"
+                                            onclick="return confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')">
+                            <i class="fas fa-times"></i>
+                            Hủy đơn
+                                    </button>
+                                </form>
+                            }
+                            else if (order.Status == OrderStatus.DangVanChuyen)
+                            {
+                                <form asp-action="UpdateStatus" asp-controller="Order" method="post" class="d-inline">
+                                    <input type="hidden" name="id" value="@order.OrderID" />
+                                    <input type="hidden" name="newStatus" value="DaNhanHang" />
+                        <button type="submit" class="btn-action btn-success-action"
+                                            onclick="return confirm('Bạn đã nhận được hàng?')">
+                            <i class="fas fa-check"></i>
+                            Đã nhận hàng
+                                    </button>
+                                </form>
+                            }
+                            else if (order.Status == OrderStatus.DaNhanHang)
+                            {
+                                <form asp-action="UpdateStatus" asp-controller="Order" method="post" class="d-inline">
+                                    <input type="hidden" name="id" value="@order.OrderID" />
+                                    <input type="hidden" name="newStatus" value="YeuCauHoanTien" />
+                        <button type="submit" class="btn-action btn-warning-action"
+                                            onclick="return confirm('Bạn muốn yêu cầu hoàn tiền?')">
+                            <i class="fas fa-undo"></i>
+                            Yêu cầu hoàn tiền
+                                    </button>
+                                </form>
+                            }
+                        </div>
+                    </div>
+    }
+}
+
+@functions {
+    string GetStatusText(OrderStatus status) => status switch
+    {
+        OrderStatus.ChoXacNhan => "Chờ xác nhận",
+        OrderStatus.ChoGiaoHang => "Chờ giao hàng",
+        OrderStatus.DangVanChuyen => "Đang vận chuyển",
+        OrderStatus.DaNhanHang => "Đã nhận hàng",
+        OrderStatus.DaHuy => "Đã hủy",
+        OrderStatus.YeuCauHoanTien => "Yêu cầu hoàn tiền",
+        OrderStatus.HoanTienThanhCong => "Hoàn tiền thành công",
+        _ => status.ToString()
+    };
+
+    string GetBadgeClass(OrderStatus status) => status switch
+    {
+        OrderStatus.ChoXacNhan => "badge-secondary",
+        OrderStatus.ChoGiaoHang => "badge-info",
+        OrderStatus.DangVanChuyen => "badge-warning",
+        OrderStatus.DaNhanHang => "badge-success",
+        OrderStatus.DaHuy => "badge-danger",
+        OrderStatus.YeuCauHoanTien => "badge-warning",
+        OrderStatus.HoanTienThanhCong => "badge-success",
+        _ => "badge-secondary"
+    };
+}
+
+<style>
+    .badge-secondary {
+        background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+        color: white;
+    }
+
+    .badge-info {
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        color: white;
+    }
+
+    .badge-warning {
+        background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        color: white;
+    }
+
+    .badge-success {
+        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        color: white;
+    }
+
+    .badge-danger {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        color: white;
+    }
+</style>

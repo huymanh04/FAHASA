@@ -1,0 +1,777 @@
+@model ProductsListViewModel
+@{
+    var saleProducts = ViewBag.SaleProducts as List<SportsStore.Models.Product> ?? new List<SportsStore.Models.Product>();
+    var nextHourSaleProducts = ViewBag.NextHourSaleProducts as List<SportsStore.Models.Product> ?? new List<SportsStore.Models.Product>();
+    var featuredProducts = ViewBag.FeaturedProducts as List<SportsStore.Models.Product> ?? new List<SportsStore.Models.Product>();
+}
+
+<style>
+    .products-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 25px;
+        padding: 20px;
+    }
+    
+    .sale-section {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        padding: 30px 20px;
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .sale-content {
+        max-width: 1400px;
+        margin: 0 auto;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .sale-title {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    .sale-product-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+        color: #333;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        align-items: center;
+        text-align: center;
+        height: 100%;
+        transition: transform 0.3s ease;
+        min-height: 380px;
+    }
+    
+    .sale-product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+    }
+    
+    .sale-product-image {
+        width: 150px;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 12px;
+        flex-shrink: 0;
+    }
+    
+    .sale-product-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .sale-product-name {
+        font-size: 1rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        min-height: 2.5em;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        line-height: 1.3;
+    }
+    
+    .sale-price-section {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 15px;
+    }
+    
+    .sale-price {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #dc3545;
+    }
+    
+    .original-price {
+        font-size: 1rem;
+        text-decoration: line-through;
+        color: #999;
+    }
+    
+    .sale-badge {
+        background: #ffc107;
+        color: #333;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        display: inline-block;
+    }
+    
+    .sale-time-range {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 15px;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+    }
+    
+    .countdown-timer {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        margin-top: 20px;
+    }
+    
+    .countdown-item {
+        background: rgba(255,255,255,0.2);
+        backdrop-filter: blur(10px);
+        padding: 15px 20px;
+        border-radius: 12px;
+        text-align: center;
+        min-width: 80px;
+    }
+    
+    .countdown-value {
+        font-size: 2rem;
+        font-weight: 700;
+        display: block;
+    }
+    
+    .countdown-label {
+        font-size: 0.85rem;
+        opacity: 0.9;
+        margin-top: 5px;
+    }
+    
+    .price-sale {
+        color: #dc3545;
+        font-weight: 700;
+    }
+    
+    .price-original {
+        text-decoration: line-through;
+        color: #999;
+        font-size: 0.9rem;
+        margin-left: 10px;
+    }
+
+    .product-card {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+    }
+
+    .product-image-wrapper {
+        position: relative;
+        overflow: hidden;
+        height: 220px;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    }
+
+    .product-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+
+    .product-card:hover .product-image {
+        transform: scale(1.1);
+    }
+
+    .product-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .product-body {
+        padding: 20px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .product-name {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 12px;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        min-height: 2.8em;
+    }
+
+    .product-price-section {
+        margin-bottom: 15px;
+    }
+
+    .price-label {
+        font-size: 0.85rem;
+        color: #666;
+        margin-bottom: 5px;
+    }
+
+    .price-value {
+        font-size: 1.3rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .product-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: auto;
+        padding-top: 15px;
+        border-top: 1px solid #f0f0f0;
+    }
+
+    .quantity-badge {
+        background: #f8f9ff;
+        color: #667eea;
+        padding: 5px 12px;
+        border-radius: 15px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .product-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .btn-add-cart {
+        flex: 1;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .btn-add-cart:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+
+    .btn-rent {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .btn-rent:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
+        color: white;
+    }
+
+    .rental-input-group {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .rental-input {
+        flex: 1;
+        padding: 8px 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+
+    .rental-input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .empty-products {
+        text-align: center;
+        padding: 80px 20px;
+        color: #999;
+    }
+
+    .empty-products i {
+        font-size: 5rem;
+        margin-bottom: 20px;
+        opacity: 0.3;
+    }
+
+    @@media (max-width: 768px) {
+        .products-grid {
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 15px;
+        }
+
+        .product-image-wrapper {
+            height: 180px;
+        }
+    }
+</style>
+
+<!-- DANH SÁCH SẢN PHẨM -->
+@if (!string.IsNullOrEmpty(Model?.CurrentSearch))
+{
+    <div class="mb-4">
+        <button id="filterToggleBtn" class="btn btn-outline-secondary mb-2">Lọc &amp; Sắp xếp</button>
+
+        <div id="filterPanel" style="display:none;">
+            <form method="get" asp-controller="Home" asp-action="Index" class="row g-2 align-items-center">
+                <input type="hidden" name="search" value="@Model?.CurrentSearch" />
+                <input type="hidden" name="categoryId" value="@Model?.CurrentCategoryId" />
+                <input type="hidden" name="priceRange" value="@Model?.CurrentPriceRange" />
+                <input type="hidden" name="condition" value="@Model?.CurrentCondition" />
+                <input type="hidden" name="rentDuration" value="@Model?.CurrentRentDuration" />
+
+                <div class="col-auto">
+                    <label class="form-label">Giá từ</label>
+                    <input type="number" step="1000" class="form-control" name="minPrice" placeholder="Min (đ)" value="@(Model?.CurrentMinPrice?.ToString() ?? string.Empty)" />
+                </div>
+                <div class="col-auto">
+                    <label class="form-label">đến</label>
+                    <input type="number" step="1000" class="form-control" name="maxPrice" placeholder="Max (đ)" value="@(Model?.CurrentMaxPrice?.ToString() ?? string.Empty)" />
+                </div>
+
+                <div class="col-auto">
+                    <label class="form-label">Sắp xếp</label>
+                    <select name="sort" class="form-select">
+                        <option value="">Mặc định</option>
+                        <option value="price_asc">Giá: Thấp → Cao</option>
+                        <option value="price_desc">Giá: Cao → Thấp</option>
+                        <option value="newest">Sản phẩm mới</option>
+                    </select>
+                </div>
+
+                <div class="col-auto align-self-end">
+                    <button type="submit" class="btn btn-primary">Lọc</button>
+                    <a href="@Url.Action("Index", "Home")" class="btn btn-outline-secondary ms-2">Đặt lại</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        (function(){
+            var btn = document.getElementById('filterToggleBtn');
+            var panel = document.getElementById('filterPanel');
+            if(btn && panel){
+                btn.addEventListener('click', function(e){
+                    e.preventDefault();
+                    panel.style.display = (panel.style.display === 'none') ? 'block' : 'none';
+                });
+
+                // restore values into controls when panel is shown
+                var current = '@(Model?.CurrentSort ?? "")';
+                var sel = panel.querySelector('select[name="sort"]');
+                if(sel && current) sel.value = current;
+                var min = '@(Model?.CurrentMinPrice?.ToString() ?? "")';
+                var max = '@(Model?.CurrentMaxPrice?.ToString() ?? "")';
+                var minEl = panel.querySelector('input[name="minPrice"]');
+                var maxEl = panel.querySelector('input[name="maxPrice"]');
+                if(minEl && min) minEl.value = min;
+                if(maxEl && max) maxEl.value = max;
+            }
+        })();
+    </script>
+}
+
+<script>
+    (function(){
+        try {
+            var current = '@(Model?.CurrentSort ?? "")';
+            if (current) {
+                var sel = document.querySelector('select[name="sort"]');
+                if (sel) sel.value = current;
+            }
+            var min = '@(Model?.CurrentMinPrice?.ToString() ?? "")';
+            var max = '@(Model?.CurrentMaxPrice?.ToString() ?? "")';
+            if(min) { var minEl = document.querySelector('input[name="minPrice"]'); if(minEl) minEl.value = min; }
+            if(max) { var maxEl = document.querySelector('input[name="maxPrice"]'); if(maxEl) maxEl.value = max; }
+        } catch(e) { /* ignore */ }
+    })();
+</script>
+</div>
+
+<!-- SẢN PHẨM NỔI BẬT - Chỉ hiển thị khi không filter theo danh mục và không đang tìm kiếm -->
+@if (featuredProducts.Any() && !(Model?.CurrentCategoryId.HasValue ?? false) && string.IsNullOrEmpty(Model?.CurrentSearch))
+{
+    <div class="container-fluid px-4 py-4">
+        <h2 class="mb-4 text-center">
+            <i class="fas fa-star text-warning me-2"></i>
+            <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">SẢN PHẨM NỔI BẬT</span>
+        </h2>
+        <div class="products-grid">
+            @foreach (var p in featuredProducts)
+            {
+                <div class="product-card">
+                    <a asp-controller="Home" asp-action="Details" asp-route-id="@p.ProductID" class="text-decoration-none">
+                        <div class="product-image-wrapper">
+                            <img src="/images/@(string.IsNullOrEmpty(p.Image) ? "default.jpg" : p.Image)" class="product-image" alt="@p.Name" />
+                            @if (p.Category != null)
+                            {
+                                <span class="product-badge">@p.Category.Name</span>
+                            }
+                        </div>
+                    </a>
+                    <div class="product-body">
+                        <a asp-controller="Home" asp-action="Details" asp-route-id="@p.ProductID" class="text-decoration-none">
+                            <h5 class="product-name">@p.Name</h5>
+                        </a>
+                        <div class="product-price-section">
+                            @if (p.IsForSale)
+                            {
+                                <div class="price-label">Giá bán:</div>
+                                @if (p.IsOnSale && p.SalePrice.HasValue)
+                                {
+                                    <div>
+                                        <span class="price-value price-sale">@p.SalePrice.Value.ToString("N0") đ</span>
+                                        <span class="price-original">@p.Price.ToString("N0") đ</span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="price-value">@p.Price.ToString("N0") đ</div>
+                                }
+                            }
+                        </div>
+                        <div class="product-info">
+                            <span class="quantity-badge"><i class="fas fa-box me-1"></i>Còn: @p.Quantity</span>
+                        </div>
+                        <div class="product-actions">
+                            @if (p.IsForSale)
+                            {
+                                <form method="post" asp-page="/Cart" style="width: 100%;">
+                                    <input type="hidden" name="productId" value="@p.ProductID" />
+                                    <input type="hidden" name="returnUrl" value="@ViewContext.HttpContext.Request.Path@ViewContext.HttpContext.Request.QueryString" />
+                                    <button class="btn-add-cart w-100" type="submit">
+                                        <i class="fas fa-cart-plus"></i>
+                                        <span>Thêm giỏ</span>
+                                    </button>
+                                </form>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+<!-- SALE SECTION - 5 SẢN PHẨM - Chỉ hiển thị khi không filter theo danh mục và không đang tìm kiếm -->
+@if (saleProducts.Any() && !(Model?.CurrentCategoryId.HasValue ?? false) && string.IsNullOrEmpty(Model?.CurrentSearch))
+{
+    var firstSale = saleProducts.First();
+    var saleStartTime = firstSale.SaleStartTime ?? DateTime.Now;
+    var saleEndTime = firstSale.SaleEndTime ?? DateTime.Now.AddHours(1);
+    var currentHour = DateTime.Now.Hour;
+    var nextHour = currentHour + 1;
+    if (nextHour >= 24) nextHour = 0;
+    <div class="sale-section">
+        <div class="sale-content">
+            <h2 class="sale-title"><i class="fas fa-fire me-2"></i>KHUYẾN MÃI ĐẶC BIỆT - 5 SẢN PHẨM</h2>
+            <div class="sale-time-range">
+                <i class="fas fa-clock me-2"></i>Khung giờ: @currentHour.ToString("00")h00 - @nextHour.ToString("00")h00
+            </div>
+            <div class="countdown-timer mb-4">
+                <div class="countdown-item">
+                    <span class="countdown-value" id="countdown-hours">00</span>
+                    <span class="countdown-label">Giờ</span>
+                </div>
+                <div class="countdown-item">
+                    <span class="countdown-value" id="countdown-minutes">00</span>
+                    <span class="countdown-label">Phút</span>
+                </div>
+                <div class="countdown-item">
+                    <span class="countdown-value" id="countdown-seconds">00</span>
+                    <span class="countdown-label">Giây</span>
+                </div>
+            </div>
+            <div class="row g-3" style="display: flex; flex-wrap: wrap;">
+                @foreach (var sp in saleProducts)
+                {
+                    <div class="col-md-6 col-lg-4" style="display: flex;">
+                        <div class="sale-product-card" style="width: 100%;">
+                            <img src="/images/@(string.IsNullOrEmpty(sp.Image) ? "default.jpg" : sp.Image)" 
+                                 class="sale-product-image" alt="@sp.Name" />
+                            <div class="sale-product-info">
+                                <div class="sale-product-name">@sp.Name</div>
+                                <div class="sale-price-section">
+                                    <span class="sale-price">@sp.SalePrice?.ToString("N0") đ</span>
+                                    <span class="original-price">@sp.Price.ToString("N0") đ</span>
+                                    <span class="sale-badge">-@((int)((1 - (sp.SalePrice ?? 0) / sp.Price) * 100))%</span>
+                                </div>
+                                <div class="mt-auto" style="width: 100%;">
+                                    <form method="post" asp-page="/Cart" class="d-inline w-100">
+                                        <input type="hidden" name="productId" value="@sp.ProductID" />
+                                        <input type="hidden" name="returnUrl" value="@ViewContext.HttpContext.Request.Path" />
+                                        <button type="submit" class="btn btn-danger btn-sm w-100">
+                                            <i class="fas fa-cart-plus me-1"></i>Mua ngay
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+            
+            <!-- Preview khung giờ tiếp theo -->
+            @if (nextHourSaleProducts.Any())
+            {
+                var nextNextHour = nextHour + 1;
+                if (nextNextHour >= 24) nextNextHour = 0;
+                <div class="mt-4 p-3" style="background: rgba(255,255,255,0.1); border-radius: 12px;">
+                    <h5 class="mb-3"><i class="fas fa-eye me-2"></i>Xem trước khung giờ tiếp theo (@nextHour.ToString("00")h00 - @nextNextHour.ToString("00")h00):</h5>
+                    <div class="row g-2">
+                        @foreach (var np in nextHourSaleProducts)
+                        {
+                            <div class="col-6 col-md-4 col-lg-2">
+                                <div style="background: rgba(255,255,255,0.15); padding: 10px; border-radius: 8px; text-align: center; height: 100%; display: flex; flex-direction: column; align-items: center;">
+                                    <img src="/images/@(string.IsNullOrEmpty(np.Image) ? "default.jpg" : np.Image)" 
+                                         style="width: 60px; height: 60px; object-fit: cover; border-radius: 6px; margin-bottom: 5px; flex-shrink: 0;" />
+                                    <div style="font-size: 0.75rem; font-weight: 600; margin-bottom: 5px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.2em;">@np.Name</div>
+                                    <div style="font-size: 0.7rem; opacity: 0.9; margin-top: auto;">@np.SalePrice?.ToString("N0") đ</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+    <script>
+      document.addEventListener('DOMContentLoaded', function(){
+        if(!window.App){ console.error('App not loaded'); return; }
+        var now = new Date();
+        var currentHour = now.getHours();
+        var nextHour = currentHour + 1; if(nextHour>=24) nextHour=0;
+        var endTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), nextHour, 0, 0);
+        
+        var hoursEl = document.getElementById('countdown-hours');
+        var minutesEl = document.getElementById('countdown-minutes');
+        var secondsEl = document.getElementById('countdown-seconds');
+        
+        if(!hoursEl || !minutesEl || !secondsEl){
+          console.error('Countdown elements not found');
+          return;
+        }
+        
+        App.registerCountdown({
+          endTime: endTime,
+          hoursEl: hoursEl,
+          minutesEl: minutesEl,
+          secondsEl: secondsEl,
+          onExpire: function(){ location.reload(); }
+        });
+        console.log('Countdown registered, ending at:', endTime);
+      });
+    </script>
+}
+
+@if (Model?.Products?.Any() == true)
+{
+    <div class="products-grid">
+        @foreach (var p in Model.Products)
+    {
+            <div class="product-card">
+                <a asp-controller="Home" asp-action="Details" asp-route-id="@p.ProductID" class="text-decoration-none">
+                    <div class="product-image-wrapper">
+                    <img src="/images/@(string.IsNullOrEmpty(p.Image) ? "default.jpg" : p.Image)"
+                             class="product-image" alt="@p.Name" />
+                        @if (p.Category != null)
+                        {
+                            <span class="product-badge">@p.Category.Name</span>
+                        }
+                    </div>
+                </a>
+
+                <div class="product-body">
+                    <a asp-controller="Home" asp-action="Details" asp-route-id="@p.ProductID" class="text-decoration-none">
+                        <h5 class="product-name">@p.Name</h5>
+                    </a>
+
+                    <div class="product-price-section">
+                        @if (p.IsForSale)
+                        {
+                            <div class="price-label">Giá bán:</div>
+                            @if (p.IsOnSale && p.SalePrice.HasValue)
+                            {
+                                <div>
+                                    <span class="price-value price-sale">@p.SalePrice.Value.ToString("N0") đ</span>
+                                    <span class="price-original">@p.Price.ToString("N0") đ</span>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="price-value">@p.Price.ToString("N0") đ</div>
+                            }
+                        }
+
+                        @if (p.IsForRent && p.Category?.Name == "Giáo trình cũ" && p.RentPrice.HasValue)
+                        {
+                            <div class="price-label">Giá thuê:</div>
+                            <div class="price-value" style="font-size: 1.1rem;">@p.RentPrice.Value.ToString("N0") đ/ngày</div>
+                        }
+                    </div>
+
+                    <div class="product-info">
+                        <span class="quantity-badge">
+                            <i class="fas fa-box me-1"></i>Còn: @p.Quantity
+                        </span>
+                    </div>
+
+                    <div class="product-actions">
+                    @if (p.IsForRent && p.Category?.Name == "Giáo trình cũ")
+                    {
+                            <form method="post" asp-page="/Cart" class="rental-input-group" style="width: 100%;">
+                            <input type="hidden" name="productId" value="@p.ProductID" />
+                            <input type="hidden" name="isRental" value="true" />
+                            <input type="hidden" name="returnUrl"
+                                       value="@ViewContext.HttpContext.Request.Path@ViewContext.HttpContext.Request.QueryString" />
+                                <input type="number" name="rentalDays" class="rental-input"
+                                       placeholder="Số ngày" min="1" required />
+                                <button class="btn-rent" type="submit" title="Thuê">
+                                    <i class="fas fa-calendar-plus"></i>
+                            </button>
+                        </form>
+                    }
+
+                    @if (p.IsForSale)
+                    {
+                            <form method="post" asp-page="/Cart" style="width: 100%;">
+                            <input type="hidden" name="productId" value="@p.ProductID" />
+                            <input type="hidden" name="returnUrl"
+                                       value="@ViewContext.HttpContext.Request.Path@ViewContext.HttpContext.Request.QueryString" />
+                                <button class="btn-add-cart w-100" type="submit">
+                                    <i class="fas fa-cart-plus"></i>
+                                    <span>Thêm giỏ</span>
+                            </button>
+                        </form>
+                    }
+                    </div>
+                </div>
+            </div>
+        }
+        </div>
+    }
+else
+{
+    <div class="empty-products">
+        <i class="fas fa-box-open"></i>
+        <h4>Không tìm thấy sản phẩm nào</h4>
+        <p>Hãy thử tìm kiếm với từ khóa khác hoặc chọn danh mục khác</p>
+</div>
+}
+<!-- PHÂN TRANG -->
+@if (Model?.PagingInfo != null && Model.PagingInfo.TotalPages > 1)
+{
+        <div class="d-flex justify-content-center mt-4 mb-4">
+        <div page-model="@Model.PagingInfo"
+         page-action="Index"
+         page-classes-enabled="true"
+             page-class="pagination-btn"
+             page-class-normal="pagination-btn-normal"
+             page-class-selected="pagination-btn-active"
+         page-url-categoryId="@Model?.CurrentCategoryId"
+         page-url-search="@Model?.CurrentSearch"
+         page-url-filterMode="@Model?.CurrentFilterMode"
+         page-url-priceRange="@Model?.CurrentPriceRange"
+         page-url-condition="@Model?.CurrentCondition"
+         page-url-rentDuration="@Model?.CurrentRentDuration"
+         page-url-minPrice="@(Model?.CurrentMinPrice?.ToString())"
+         page-url-maxPrice="@(Model?.CurrentMaxPrice?.ToString())"
+         page-url-sort="@Model?.CurrentSort"
+             class="pagination-wrapper">
+        </div>
+    </div>
+}
+
+<style>
+    .pagination-wrapper {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .pagination-btn {
+        padding: 10px 16px;
+        border: 2px solid #e0e0e0;
+        background: white;
+        border-radius: 10px;
+        font-weight: 600;
+        color: #333;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        min-width: 45px;
+        text-align: center;
+    }
+
+    .pagination-btn:hover {
+        border-color: #667eea;
+        color: #667eea;
+        transform: translateY(-2px);
+    }
+
+    .pagination-btn-active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-color: transparent;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .pagination-btn-active:hover {
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+</style>

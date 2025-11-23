@@ -1,0 +1,244 @@
+@model SportsStore.Models.ViewModels.ProfileModel
+@{
+    ViewData["Title"] = "Hồ sơ cá nhân";
+    Layout = "_ProfileLayout";
+}
+
+<style>
+    .profile-header {
+        text-align: center;
+        margin-bottom: 40px;
+        padding-bottom: 30px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .profile-header h4 {
+        font-size: 2rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 20px;
+    }
+
+    .avatar-container {
+        position: relative;
+        display: inline-block;
+        margin-bottom: 20px;
+    }
+
+    .avatar-wrapper {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 4px solid white;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .avatar-wrapper img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .avatar-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 3rem;
+    }
+
+    .profile-info-card {
+        background: white;
+        border-radius: 16px;
+        padding: 30px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        margin-bottom: 20px;
+    }
+
+    .info-row {
+        display: flex;
+        padding: 20px 0;
+        border-bottom: 1px solid #f0f0f0;
+        align-items: center;
+    }
+
+    .info-row:last-child {
+        border-bottom: none;
+    }
+
+    .info-label {
+        flex: 0 0 200px;
+        font-weight: 600;
+        color: #666;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .info-label i {
+        color: #667eea;
+        font-size: 1.1rem;
+    }
+
+    .info-value {
+        flex: 1;
+        color: #333;
+        font-size: 1rem;
+    }
+
+    .info-value.empty {
+        color: #999;
+        font-style: italic;
+    }
+
+    .btn-edit {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 25px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-edit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+
+    .role-badge {
+        display: inline-block;
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        margin-left: 10px;
+    }
+
+    @@media (max-width: 768px) {
+        .info-row {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .info-label {
+            flex: 1;
+        }
+    }
+</style>
+
+<div class="profile-header">
+    <h4>
+        <i class="fas fa-id-badge me-2"></i>
+        Thông tin cá nhân
+</h4>
+    <div class="avatar-container">
+        <div class="avatar-wrapper">
+            @if (!string.IsNullOrEmpty(Model.AvatarUrl))
+            {
+                <img src="@Model.AvatarUrl" alt="Avatar" />
+            }
+            else
+            {
+                <div class="avatar-placeholder">
+                    <i class="fas fa-user"></i>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="profile-info-card">
+    <div class="info-row">
+        <div class="info-label">
+            <i class="fas fa-user"></i>
+            Tên đăng nhập
+        </div>
+        <div class="info-value">
+            @Model.UserName
+            @if (Model.Roles != null && Model.Roles.Any())
+            {
+                @foreach (var role in Model.Roles)
+                {
+                    <span class="role-badge">@role</span>
+                }
+            }
+        </div>
+    </div>
+
+    <div class="info-row">
+        <div class="info-label">
+            <i class="fas fa-signature"></i>
+            Họ tên
+        </div>
+        <div class="info-value @(string.IsNullOrEmpty(Model.FullName) ? "empty" : "")">
+            @(Model.FullName ?? "Chưa cập nhật")
+        </div>
+    </div>
+
+    <div class="info-row">
+        <div class="info-label">
+            <i class="fas fa-envelope"></i>
+            Email
+        </div>
+        <div class="info-value">
+            @Model.Email
+        </div>
+    </div>
+
+    <div class="info-row">
+        <div class="info-label">
+            <i class="fas fa-phone"></i>
+            Số điện thoại
+        </div>
+        <div class="info-value @(string.IsNullOrEmpty(Model.PhoneNumber) ? "empty" : "")">
+            @(Model.PhoneNumber ?? "Chưa cập nhật")
+        </div>
+    </div>
+
+    <div class="info-row">
+        <div class="info-label">
+            <i class="fas fa-birthday-cake"></i>
+            Ngày sinh
+        </div>
+        <div class="info-value @(Model.BirthDate == null ? "empty" : "")">
+            @(Model.BirthDate?.ToString("dd/MM/yyyy") ?? "Chưa cập nhật")
+        </div>
+    </div>
+
+    <div class="info-row">
+        <div class="info-label">
+            <i class="fas fa-map-marker-alt"></i>
+            Địa chỉ
+        </div>
+        <div class="info-value @(string.IsNullOrEmpty(Model.Address) ? "empty" : "")">
+            @(Model.Address ?? "Chưa cập nhật")
+        </div>
+    </div>
+</div>
+
+<div class="text-center mt-4">
+    <a href="/Account/Edit" class="btn-edit">
+        <i class="fas fa-edit"></i>
+        Chỉnh sửa thông tin
+</a>
+</div>

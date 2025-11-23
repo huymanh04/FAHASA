@@ -1,0 +1,422 @@
+@page
+@model CartModel
+@using SportsStore.Models
+@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer Localizer
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+<style>
+    body {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        min-height: 100vh;
+    }
+
+    .cart-container {
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    .cart-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 20px;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    }
+
+    .cart-header h2 {
+        margin: 0;
+        font-size: 2rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .cart-header h2 i {
+        font-size: 2.5rem;
+    }
+
+    .cart-item-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        border: 1px solid #e0e0e0;
+    }
+
+    .cart-item-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+    }
+
+    .product-image-wrapper {
+        width: 120px;
+        height: 120px;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 2px solid #f0f0f0;
+        background: #f8f9fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .product-image-wrapper img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+
+    .cart-item-card:hover .product-image-wrapper img {
+        transform: scale(1.1);
+    }
+
+    .product-info h5 {
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 8px;
+        font-size: 1.1rem;
+    }
+
+    .product-type-badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+
+    .badge-rental {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+    }
+
+    .badge-purchase {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+    }
+
+    .product-price {
+        font-size: 1.5rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .quantity-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 1.1rem;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-remove {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
+    }
+
+    .btn-remove:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
+    }
+
+    .cart-summary-card {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e0e0e0;
+        position: sticky;
+        top: 20px;
+    }
+
+    .summary-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        font-size: 1rem;
+    }
+
+    .summary-row.total {
+        border-top: 2px solid #f0f0f0;
+        margin-top: 15px;
+        padding-top: 20px;
+        font-size: 1.3rem;
+        font-weight: 700;
+    }
+
+    .summary-label {
+        color: #666;
+    }
+
+    .summary-value {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .summary-value.total {
+        font-size: 1.5rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .btn-checkout {
+        width: 100%;
+        padding: 15px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 1.1rem;
+        margin-top: 20px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-checkout:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-continue {
+        width: 100%;
+        padding: 15px;
+        background: white;
+        color: #667eea;
+        border: 2px solid #667eea;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 1rem;
+        margin-top: 15px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-continue:hover {
+        background: #667eea;
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .empty-cart {
+        text-align: center;
+        padding: 80px 20px;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .empty-cart-icon {
+        font-size: 5rem;
+        color: #ccc;
+        margin-bottom: 20px;
+    }
+
+    .empty-cart h3 {
+        color: #666;
+        font-weight: 600;
+        margin-bottom: 15px;
+    }
+
+    .empty-cart p {
+        color: #999;
+        margin-bottom: 30px;
+    }
+
+    .btn-shop-now {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 25px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-shop-now:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+
+    @@media (max-width: 768px) {
+        .cart-header h2 {
+            font-size: 1.5rem;
+        }
+
+        .product-image-wrapper {
+            width: 100px;
+            height: 100px;
+        }
+
+        .cart-summary-card {
+            position: relative;
+            top: 0;
+            margin-top: 20px;
+        }
+    }
+</style>
+
+<div class="cart-container">
+    <div class="cart-header">
+        <h2>
+            <i class="fas fa-shopping-cart"></i>
+            @Localizer["CartTitle"]
+        </h2>
+    </div>
+
+    @if (Model?.Cart?.Lines != null && Model.Cart.Lines.Any())
+    {
+    <div class="row">
+        <div class="col-lg-8">
+                @foreach (var line in Model.Cart.Lines)
+            {
+                    <div class="cart-item-card">
+                        <div class="d-flex align-items-center gap-4 flex-wrap">
+                            <div class="product-image-wrapper">
+                        <img src="/images/@(string.IsNullOrEmpty(line.Product.Image) ? "default.jpg" : line.Product.Image)"
+                                     alt="@line.Product.Name" />
+                            </div>
+                            
+                            <div class="product-info flex-grow-1">
+                                <h5>@line.Product.Name</h5>
+                                <span class="product-type-badge @(line.IsRental ? "badge-rental" : "badge-purchase")">
+                                    <i class="fas @(line.IsRental ? "fa-calendar-alt" : "fa-shopping-bag") me-1"></i>
+                                    @(line.IsRental ? $"Thuê {line.RentalDays} ngày" : "Mua")
+                                </span>
+                                <form method="post" asp-page-handler="UpdateQuantity" class="d-inline-flex align-items-center mt-2 gap-2">
+                                    <input type="hidden" name="productId" value="@line.Product.ProductID" />
+                                    <input type="hidden" name="isRental" value="@line.IsRental" />
+                                    <input type="hidden" name="returnUrl" value="@Model?.ReturnUrl" />
+                                    <button type="submit" name="delta" value="-1" class="btn btn-sm btn-outline-secondary fw-bold" style="font-size:1.2rem;">−</button>
+                                    <span class="quantity-badge">@line.Quantity</span>
+                                    <button type="submit" name="delta" value="1" class="btn btn-sm btn-outline-secondary fw-bold" style="font-size:1.2rem;">+</button>
+                                </form>
+                                <form method="post" asp-page-handler="Remove" class="mt-2 d-inline">
+                                    <input type="hidden" name="productId" value="@line.Product.ProductID" />
+                                <input type="hidden" name="isRental" value="@line.IsRental" />
+                                <input type="hidden" name="returnUrl" value="@Model?.ReturnUrl" />
+                                    <button type="submit" class="btn btn-remove ms-2">
+                                        <i class="fas fa-trash-alt me-2"></i>Xóa
+                                    </button>
+                            </form>
+                                @if (Model.ConfirmRemoveProductId.HasValue && Model.ConfirmRemoveProductId == line.Product.ProductID && Model.ConfirmRemoveIsRental == line.IsRental)
+                                {
+                                    <div class="mt-2 p-3 border rounded bg-light text-danger fw-bold">
+                                        <span>Bạn có chắc muốn xóa sản phẩm này khỏi giỏ hàng?</span>
+                                        <form method="post" asp-page-handler="ConfirmRemove" class="d-inline">
+                                            <input type="hidden" name="productId" value="@line.Product.ProductID" />
+                                            <input type="hidden" name="isRental" value="@line.IsRental" />
+                                            <input type="hidden" name="returnUrl" value="@Model?.ReturnUrl" />
+                                            <button type="submit" class="btn btn-sm btn-danger ms-3">Xác nhận xóa</button>
+                                            <a href="@Url.Page(null, new { returnUrl = Model?.ReturnUrl })" class="btn btn-sm btn-secondary ms-2">Hủy</a>
+                                        </form>
+                                    </div>
+                                }
+                        </div>
+
+                            <div class="text-center">
+                                <div class="product-price">
+                                    @line.LineTotal.ToString("N0") đ
+                                </div>
+                            </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="col-lg-4">
+                <div class="cart-summary-card">
+                    <h3 class="summary-title">Tóm tắt đơn hàng</h3>
+                    
+                    <div class="summary-row">
+                        <span class="summary-label">Số lượng sản phẩm:</span>
+                        <span class="summary-value">@Model.Cart.Lines.Count()</span>
+</div>
+
+                    <div class="summary-row">
+                        <span class="summary-label">Tổng số lượng:</span>
+                        <span class="summary-value">@Model.Cart.Lines.Sum(l => l.Quantity)</span>
+                    </div>
+                    
+                    <div class="summary-row total">
+                        <span class="summary-label">Tổng tiền:</span>
+                        <span class="summary-value total">@Model.Cart.ComputeTotalValue().ToString("N0") đ</span>
+                    </div>
+                    
+                    <p class="small text-muted mt-3 mb-0">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Chưa bao gồm phí vận chuyển
+                    </p>
+
+                    <form method="post" asp-page-handler="ProceedToCheckout">
+                        <input type="hidden" name="returnUrl" value="@Model?.ReturnUrl" />
+                        <button type="submit" class="btn btn-checkout">
+                            <i class="fas fa-credit-card me-2"></i>
+                            Tiến hành đặt hàng
+                        </button>
+                    </form>
+
+                    <a href="@Model?.ReturnUrl" class="btn btn-continue">
+                        <i class="fas fa-arrow-left me-2"></i>
+                        Tiếp tục mua hàng
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="empty-cart">
+            <div class="empty-cart-icon">
+                <i class="fas fa-shopping-cart"></i>
+            </div>
+            <h3>Giỏ hàng của bạn đang trống</h3>
+            <p>Hãy thêm sản phẩm vào giỏ hàng để tiếp tục mua sắm!</p>
+            <a href="/" class="btn-shop-now">
+                <i class="fas fa-store me-2"></i>
+                Mua sắm ngay
+            </a>
+        </div>
+    }
+</div>

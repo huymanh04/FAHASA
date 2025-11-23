@@ -1,0 +1,155 @@
+@page "/admin/vouchers"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles="Admin")]
+@using SportsStore.Models
+@inherits OwningComponentBase<StoreDbContext>
+@layout AdminLayout
+
+<h2 class="page-title"><i class="fas fa-ticket-alt"></i><span>Quản lý Voucher</span></h2>
+<div class="page-card mb-4">
+    <h5 class="fw-bold mb-3">Tạo voucher mới</h5>
+    @if(!string.IsNullOrEmpty(errorMessage)) { <div class="alert alert-danger py-2">@errorMessage</div> }
+    @if(!string.IsNullOrEmpty(successMessage)) { <div class="alert alert-success py-2">@successMessage</div> }
+    <div class="row g-3">
+        <div class="col-md-3">
+            <label class="form-label">Mã</label>
+            <input class="form-control" @bind="newVoucherCode" placeholder="VD: SALE10" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Loại giảm</label>
+            <select class="form-select" @bind="newDiscountType">
+                <option value="Percentage">Phần trăm (%)</option>
+                <option value="FixedAmount">Số tiền (đ)</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Giá trị</label>
+            <input type="number" step="0.01" class="form-control" @bind="newValue" placeholder="0.05 hoặc 10000" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Đơn tối thiểu</label>
+            <input type="number" class="form-control" @bind="newMinOrder" placeholder="0 = không" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Lượt toàn hệ thống / ngày</label>
+            <input type="number" class="form-control" @bind="newDailyLimit" placeholder="0 = không giới hạn" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Lượt mỗi tài khoản / ngày</label>
+            <input type="number" class="form-control" @bind="newPerUserDaily" placeholder="0 = không giới hạn" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Lượt mỗi tài khoản / tuần</label>
+            <input type="number" class="form-control" @bind="newPerUserWeekly" placeholder="0 = không giới hạn" />
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+            <button class="btn btn-primary w-100" @onclick="CreateVoucher"><i class="fas fa-plus"></i> Tạo</button>
+        </div>
+    </div>
+</div>
+
+<div class="page-card">
+    <h5 class="fw-bold mb-3">Danh sách voucher</h5>
+    <table class="table table-sm align-middle">
+        <thead>
+            <tr>
+                <th>Mã</th>
+                <th>Loại</th>
+                <th>Giá trị</th>
+                <th>Tối thiểu</th>
+                <th>Lượt hôm nay / Giới hạn</th>
+                <th>User/ngày</th>
+                <th>User/tuần</th>
+                <th>Hoạt động</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        @if(vouchers.Count == 0)
+        {
+            <tr><td colspan="9" class="text-muted text-center">Chưa có voucher.</td></tr>
+        }
+        else
+        {
+            foreach(var v in vouchers)
+            {
+                <tr class="@(v.IsActive ? string.Empty : "table-secondary")">
+                    <td>@v.Code</td>
+                    <td>@(v.DiscountType == VoucherDiscountType.Percentage ? "%" : "Tiền")</td>
+                    <td>@(v.DiscountType == VoucherDiscountType.Percentage ? (v.Value*100).ToString("F0") + "%" : string.Format("{0:N0} đ", v.Value))</td>
+                    <td>@(v.MinOrderTotal.HasValue && v.MinOrderTotal.Value>0 ? string.Format("{0:N0} đ", v.MinOrderTotal.Value) : "Không")</td>
+                    <td>@v.DailyUsedCount / @(v.DailyLimit>0? v.DailyLimit : "∞")</td>
+                    <td>@(v.PerUserDailyLimit>0? v.PerUserDailyLimit.ToString() : "∞")</td>
+                    <td>@(v.PerUserWeeklyLimit>0? v.PerUserWeeklyLimit.ToString() : "∞")</td>
+                    <td>@(v.IsActive? "Đang" : "Tắt")</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-secondary me-1" @onclick="() => ToggleActive(v)">@(v.IsActive? "Tắt" : "Bật")</button>
+                        <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteVoucher(v)"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            }
+        }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    private List<Voucher> vouchers = new();
+    private string newVoucherCode = string.Empty;
+    private string newDiscountType = "Percentage";
+    private decimal newValue = 0;
+    private decimal? newMinOrder = 0;
+    private int newDailyLimit = 0;
+    private int newPerUserDaily = 0;
+    private int newPerUserWeekly = 0;
+    private string errorMessage = string.Empty;
+    private string successMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadVouchers();
+    }
+
+    private async Task LoadVouchers()
+    {
+        vouchers = await Service.Vouchers.OrderBy(v => v.Code).ToListAsync();
+    }
+
+    private async Task CreateVoucher()
+    {
+        errorMessage = successMessage = string.Empty;
+        var code = (newVoucherCode ?? string.Empty).Trim().ToUpperInvariant();
+        if(string.IsNullOrWhiteSpace(code)) { errorMessage = "Mã không được trống"; return; }
+        if(await Service.Vouchers.AnyAsync(v => v.Code == code)) { errorMessage = "Mã đã tồn tại"; return; }
+        if(newDiscountType == "Percentage" && (newValue <= 0 || newValue >= 1)) { errorMessage = "Giá trị % phải trong (0,1) ví dụ 0.05"; return; }
+        if(newDiscountType == "FixedAmount" && newValue <= 0) { errorMessage = "Số tiền giảm phải > 0"; return; }
+        var voucher = new Voucher {
+            Code = code,
+            DiscountType = newDiscountType == "Percentage"? VoucherDiscountType.Percentage : VoucherDiscountType.FixedAmount,
+            Value = newValue,
+            MinOrderTotal = (newMinOrder.HasValue && newMinOrder.Value > 0)? newMinOrder : null,
+            DailyLimit = newDailyLimit,
+            PerUserDailyLimit = newPerUserDaily,
+            PerUserWeeklyLimit = newPerUserWeekly,
+            IsActive = true
+        };
+        Service.Vouchers.Add(voucher);
+        await Service.SaveChangesAsync();
+        successMessage = "Tạo voucher thành công";
+        newVoucherCode = string.Empty; newValue = 0; newMinOrder = 0; newDailyLimit = 0; newPerUserDaily = 0; newPerUserWeekly = 0; newDiscountType = "Percentage";
+        await LoadVouchers();
+    }
+
+    private async Task ToggleActive(Voucher v)
+    {
+        v.IsActive = !v.IsActive;
+        await Service.SaveChangesAsync();
+        await LoadVouchers();
+    }
+
+    private async Task DeleteVoucher(Voucher v)
+    {
+        Service.Vouchers.Remove(v);
+        await Service.SaveChangesAsync();
+        await LoadVouchers();
+    }
+}

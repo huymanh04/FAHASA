@@ -1,0 +1,448 @@
+@page "/admin/chat"
+@layout AdminLayout
+@using SportsStore.Models
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.SignalR
+@using Microsoft.JSInterop
+@inject StoreDbContext Context
+@inject Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> UserManager
+@inject IHubContext<SportsStore.Hubs.ChatHub> HubContext
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JS
+
+<style>
+    .chat-admin-container {
+        background: white;
+        border-radius: 16px;
+        padding: 25px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .chat-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .page-title {
+        font-size: 2rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .chat-messages-list {
+        max-height: 500px;
+        overflow-y: auto;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 12px;
+        margin-bottom: 20px;
+    }
+    .message {
+        margin-bottom: 12px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .message.admin {
+        align-items: flex-end; /* admin sent messages on the right */
+    }
+
+    .message.user {
+        align-items: flex-start; /* received (customer) messages on the left) */
+    }
+
+    .message-bubble {
+        max-width: 75%;
+        padding: 10px 14px;
+        border-radius: 18px;
+        word-wrap: break-word;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .message.admin .message-bubble {
+        background: linear-gradient(135deg, #ffecec 0%, #fff1f1 100%);
+        color: #333;
+        border: 1px solid rgba(220,35,45,0.12);
+        margin-left: auto; /* align bubble to right */
+    }
+
+    .message.user .message-bubble {
+        background: white;
+        color: #333;
+        border: 1px solid #e6e6e6;
+        margin-right: auto; /* align bubble to left */
+    }
+
+    .message-time { font-size: 11px; color: #999; margin-top:6px }
+
+    .message-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
+    .message-user {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .message-time {
+        font-size: 0.85rem;
+        color: #999;
+    }
+
+    .message-content {
+        color: #555;
+        line-height: 1.6;
+    }
+
+    .reply-section {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        border: 2px solid #e0e0e0;
+    }
+
+    .reply-input {
+        width: 100%;
+        min-height: 100px;
+        padding: 12px;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        resize: vertical;
+        margin-bottom: 15px;
+    }
+
+    .btn-send-reply {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-send-reply:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #999;
+    }
+
+    .badge-admin {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .badge-user {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .chat-grid { display:flex; gap:20px; }
+    .conversations { width:260px; background:#fff; border-radius:12px; padding:10px; box-shadow:0 4px 12px rgba(0,0,0,0.04); max-height:560px; overflow:auto }
+    .conversation-item { padding:10px; border-radius:10px; cursor:pointer; display:flex; gap:10px; align-items:center; border:1px solid transparent }
+    .conversation-item.selected { background:#f0f8ff; border-color:#d0e7ff }
+    .conversation-name { font-weight:600 }
+    .conversation-last { font-size:0.85rem; color:#666 }
+    .messages-panel { flex:1 }
+    .avatar { width:36px; height:36px; border-radius:50%; background:#eee; display:flex; align-items:center; justify-content:center; font-weight:600; color:#555 }
+    .badge-unread { background:#dc3545; color:white; padding:4px 8px; border-radius:12px; font-size:0.75rem }
+</style>
+
+<div class="chat-admin-container">
+    <div class="chat-header">
+        <h2 class="page-title">
+            <i class="fas fa-comments"></i>
+            <span>Quản lý Chat</span>
+        </h2>
+        <button class="btn btn-primary" @onclick="RefreshMessages">
+            <i class="fas fa-sync-alt me-2"></i>Làm mới
+        </button>
+    </div>
+
+    <div class="chat-grid">
+        <div class="conversations">
+            <h5 class="mb-3">Danh sách cuộc trò chuyện</h5>
+            @if (conversations.Count == 0)
+            {
+                <div class="text-muted">Chưa có cuộc trò chuyện</div>
+            }
+            else
+            {
+                @foreach (var c in conversations)
+                {
+                    <div class="conversation-item @(c.UserId == selectedConversationId ? "selected" : "")" @onclick="() => SelectConversationAndLoad(c.UserId)">
+                        <div class="avatar">@((!string.IsNullOrEmpty(c.UserName) ? c.UserName[0].ToString().ToUpper() : "U"))</div>
+                        <div>
+                            <div class="conversation-name">@c.UserName</div>
+                            <div class="conversation-last">@c.LastMessage</div>
+                        </div>
+                        <div class="ms-auto text-end">
+                            @if (c.UnreadCount > 0)
+                            {
+                                <div class="badge-unread">@c.UnreadCount</div>
+                            }
+                            <div class="text-muted"><small>@c.LastAt.ToString("dd/MM HH:mm")</small></div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+
+        <div class="messages-panel">
+            @if (string.IsNullOrEmpty(selectedConversationId))
+            {
+                <div class="empty-state">
+                    <i class="fas fa-comments" style="font-size: 2.5rem; opacity: 0.5;"></i>
+                    <h5 class="mt-3">Chọn một cuộc trò chuyện để xem chi tiết</h5>
+                </div>
+            }
+            else
+            {
+                <div class="chat-messages-list">
+                    @foreach (var msg in messages.OrderBy(m => m.SentAt))
+                    {
+                        var css = msg.IsFromAdmin ? "message admin" : "message user";
+                        <div class="@css">
+                            <div class="message-header">
+                                <div>
+                                    <span class="message-user">
+                                        <span class="@(msg.IsFromAdmin ? "badge-admin" : "badge-user")">
+                                            @(msg.IsFromAdmin ? "ADMIN" : "KHÁCH HÀNG")
+                                        </span>
+                                        @msg.UserName
+                                    </span>
+                                </div>
+                                <span class="message-time">@msg.SentAt.ToString("dd/MM/yyyy HH:mm")</span>
+                            </div>
+                            <div class="message-bubble">@msg.Message</div>
+                        </div>
+                    }
+                </div>
+
+                <div class="reply-section mt-3">
+                    <h5 class="mb-3"><i class="fas fa-reply me-2"></i>Trả lời khách hàng</h5>
+                    <textarea id="replyInput" class="reply-input" @bind="replyMessage" placeholder="Nhập tin nhắn trả lời..."></textarea>
+                    <button class="btn-send-reply" @onclick="SendReply">
+                        <i class="fas fa-paper-plane me-2"></i>Gửi tin nhắn
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<ChatMessage> messages = new();
+    private string replyMessage = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        LoadConversations();
+        if (conversations.Any())
+        {
+            selectedConversationId = conversations.First().UserId;
+            LoadMessagesForSelected();
+        }
+    }
+
+    void LoadMessages()
+    {
+        messages = Context.ChatMessages.OrderBy(m => m.SentAt).ToList();
+    }
+
+    void RefreshMessages()
+    {
+        LoadConversations();
+        if (!string.IsNullOrEmpty(selectedConversationId)) LoadMessagesForSelected();
+    }
+
+    async Task SendReply()
+    {
+        if (string.IsNullOrWhiteSpace(replyMessage))
+            return;
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState?.User;
+        if (user == null || !(user.Identity?.IsAuthenticated == true))
+            return;
+
+        var currentUser = await UserManager.GetUserAsync(user);
+        if (currentUser == null)
+            return;
+
+        // Determine recipient: prefer selectedConversationId (customer/session id). If not selected, attempt to pick last non-admin message's user.
+        string? recipientId = selectedConversationId;
+        if (string.IsNullOrEmpty(recipientId))
+        {
+            var lastUserMsg = messages.LastOrDefault(m => !m.IsFromAdmin && !string.IsNullOrEmpty(m.UserId));
+            recipientId = lastUserMsg?.UserId;
+        }
+
+        var message = new ChatMessage
+        {
+            UserId = recipientId ?? string.Empty,
+            UserName = currentUser.UserName ?? "Admin",
+            Message = replyMessage,
+            IsFromAdmin = true,
+            SentAt = DateTime.Now
+        };
+
+        Context.ChatMessages.Add(message);
+        Context.SaveChanges();
+
+        // Gửi qua SignalR - include recipient id so clients can route the message to the right conversation
+        await HubContext.Clients.All.SendAsync("ReceiveMessage", message.UserId ?? string.Empty, message.UserName, message.Message, true, DateTime.Now.ToString("HH:mm"));
+
+        replyMessage = string.Empty;
+    }
+
+    private string? selectedConversationId;
+
+    void SelectConversation(string id)
+    {
+        selectedConversationId = string.IsNullOrWhiteSpace(id) ? null : id;
+    }
+
+    void SelectConversationAndLoad(string id)
+    {
+        selectedConversationId = string.IsNullOrWhiteSpace(id) ? null : id;
+        LoadMessagesForSelected();
+    }
+
+    private List<ConversationVm> conversations = new();
+
+    class ConversationVm
+    {
+        public string UserId { get; set; } = string.Empty;
+        public string UserName { get; set; } = string.Empty;
+        public string LastMessage { get; set; } = string.Empty;
+        public DateTime LastAt { get; set; }
+        public int UnreadCount { get; set; }
+    }
+
+    void LoadConversations()
+    {
+        conversations = Context.ChatMessages
+            .Where(m => !string.IsNullOrEmpty(m.UserId))
+            .GroupBy(m => m.UserId)
+            .Select(g => new ConversationVm
+            {
+                UserId = g.Key,
+                UserName = g.OrderByDescending(x => x.SentAt).Select(x => x.UserName).FirstOrDefault() ?? "Khách",
+                LastMessage = g.OrderByDescending(x => x.SentAt).Select(x => x.Message).FirstOrDefault() ?? string.Empty,
+                LastAt = g.Max(x => x.SentAt),
+                UnreadCount = g.Count(x => !x.IsFromAdmin && !x.IsRead)
+            })
+            .OrderByDescending(c => c.LastAt)
+            .ToList();
+    }
+
+    void LoadMessagesForSelected()
+    {
+        if (string.IsNullOrEmpty(selectedConversationId))
+        {
+            messages = new List<ChatMessage>();
+            return;
+        }
+
+        messages = Context.ChatMessages
+            .Where(m => m.UserId == selectedConversationId)
+            .OrderBy(m => m.SentAt)
+            .ToList();
+
+        // Mark customer messages as read when admin opens the conversation
+        var unread = messages.Where(m => !m.IsFromAdmin && !m.IsRead).ToList();
+        if (unread.Any())
+        {
+            foreach (var u in unread) u.IsRead = true;
+            Context.SaveChanges();
+            // refresh conversation list counts
+            LoadConversations();
+        }
+    }
+
+    private DotNetObjectReference<Chat>? objRef;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            objRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("initAdminSignalR", objRef);
+            // Setup Enter-to-send for admin reply box
+            await JS.InvokeVoidAsync("adminChat.setupAdminKeySend", objRef, "replyInput");
+        }
+    }
+
+    [JSInvokable]
+    public Task ReceiveFromHub(string fromUserId, string userName, string message, bool isFromAdmin, string time)
+    {
+        // If this message belongs to the currently selected conversation, add it to the UI.
+        if (!string.IsNullOrEmpty(selectedConversationId) && fromUserId == selectedConversationId)
+        {
+            var chatMsg = new ChatMessage
+            {
+                UserId = fromUserId,
+                UserName = userName,
+                Message = message,
+                IsFromAdmin = isFromAdmin,
+                SentAt = DateTime.Now
+            };
+
+            messages.Add(chatMsg);
+            InvokeAsync(StateHasChanged);
+        }
+        else
+        {
+            // If not the selected conversation, refresh conversation list to show new activity.
+            LoadConversations();
+            InvokeAsync(StateHasChanged);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("stopAdminSignalR");
+            await JS.InvokeVoidAsync("adminChat.stopAdminKeySend", "replyInput");
+        }
+        catch { }
+        objRef?.Dispose();
+    }
+
+    [JSInvokable]
+    public Task OnAdminEnterPressed()
+    {
+        _ = InvokeAsync(async () => await SendReply());
+        return Task.CompletedTask;
+    }
+}
