@@ -254,7 +254,7 @@ namespace SportsStore.Migrations
 
                     b.HasKey("AuthorId");
 
-                    b.ToTable("Authors");
+                    b.ToTable("Authors", (string)null);
                 });
 
             modelBuilder.Entity("SportsStore.Models.CartLine", b =>
@@ -286,7 +286,7 @@ namespace SportsStore.Migrations
 
                     b.HasIndex("ProductID");
 
-                    b.ToTable("CartLines");
+                    b.ToTable("CartLines", (string)null);
                 });
 
             modelBuilder.Entity("SportsStore.Models.Category", b =>
@@ -306,7 +306,7 @@ namespace SportsStore.Migrations
 
                     b.HasKey("CategoryId");
 
-                    b.ToTable("Categories");
+                    b.ToTable("Categories", (string)null);
                 });
 
             modelBuilder.Entity("SportsStore.Models.ChatMessage", b =>
@@ -340,7 +340,7 @@ namespace SportsStore.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ChatMessages");
+                    b.ToTable("ChatMessages", (string)null);
                 });
 
             modelBuilder.Entity("SportsStore.Models.Notification", b =>
@@ -381,7 +381,7 @@ namespace SportsStore.Migrations
 
                     b.HasKey("NotificationId");
 
-                    b.ToTable("Notifications");
+                    b.ToTable("Notifications", (string)null);
                 });
 
             modelBuilder.Entity("SportsStore.Models.Order", b =>
@@ -457,7 +457,7 @@ namespace SportsStore.Migrations
 
                     b.HasKey("OrderID");
 
-                    b.ToTable("Orders");
+                    b.ToTable("Orders", (string)null);
                 });
 
             modelBuilder.Entity("SportsStore.Models.Product", b =>
@@ -521,7 +521,7 @@ namespace SportsStore.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.ToTable("Products");
+                    b.ToTable("Products", (string)null);
                 });
 
             modelBuilder.Entity("SportsStore.Models.ProductImage", b =>
@@ -543,7 +543,7 @@ namespace SportsStore.Migrations
 
                     b.HasIndex("ProductID");
 
-                    b.ToTable("ProductImages");
+                    b.ToTable("ProductImages", (string)null);
                 });
 
             modelBuilder.Entity("SportsStore.Models.ProductReview", b =>
@@ -581,7 +581,7 @@ namespace SportsStore.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("ProductReviews");
+                    b.ToTable("ProductReviews", (string)null);
                 });
 
             modelBuilder.Entity("SportsStore.Models.Rental", b =>
@@ -631,7 +631,7 @@ namespace SportsStore.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Rentals");
+                    b.ToTable("Rentals", (string)null);
                 });
 
             modelBuilder.Entity("SportsStore.Models.Tutor", b =>
@@ -674,7 +674,7 @@ namespace SportsStore.Migrations
 
                     b.HasKey("TutorId");
 
-                    b.ToTable("Tutors");
+                    b.ToTable("Tutors", (string)null);
                 });
 
             modelBuilder.Entity("SportsStore.Models.TutorBooking", b =>
@@ -741,7 +741,7 @@ namespace SportsStore.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("TutorBookings");
+                    b.ToTable("TutorBookings", (string)null);
                 });
 
             modelBuilder.Entity("SportsStore.Models.UserCartItem", b =>
@@ -778,7 +778,7 @@ namespace SportsStore.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("UserCartItems");
+                    b.ToTable("UserCartItems", (string)null);
                 });
 
             modelBuilder.Entity("SportsStore.Models.Voucher", b =>
@@ -826,7 +826,7 @@ namespace SportsStore.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Vouchers");
+                    b.ToTable("Vouchers", (string)null);
                 });
 
             modelBuilder.Entity("SportsStore.Models.VoucherUserUsage", b =>
@@ -860,7 +860,7 @@ namespace SportsStore.Migrations
 
                     b.HasIndex("VoucherId");
 
-                    b.ToTable("VoucherUserUsages");
+                    b.ToTable("VoucherUserUsages", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

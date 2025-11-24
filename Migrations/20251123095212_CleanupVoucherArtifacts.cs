@@ -11,46 +11,47 @@ namespace SportsStore.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_Orders_Vouchers_VoucherId",
-                table: "Orders");
+            // Kiểm tra và xóa foreign key nếu tồn tại
+            migrationBuilder.Sql(@"
+                IF EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_Orders_Vouchers_VoucherId')
+                BEGIN
+                    ALTER TABLE [Orders] DROP CONSTRAINT [FK_Orders_Vouchers_VoucherId];
+                END
+            ");
 
-            migrationBuilder.DropTable(
-                name: "ShippingFees");
+            // Kiểm tra và xóa index nếu tồn tại
+            migrationBuilder.Sql(@"
+                IF EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Orders_VoucherId')
+                BEGIN
+                    DROP INDEX [IX_Orders_VoucherId] ON [Orders];
+                END
+            ");
 
-            migrationBuilder.DropTable(
-                name: "UserVouchers");
+            // Xóa các bảng nếu tồn tại
+            migrationBuilder.Sql(@"
+                IF EXISTS (SELECT * FROM sys.tables WHERE name = 'ShippingFees')
+                    DROP TABLE [ShippingFees];
+                IF EXISTS (SELECT * FROM sys.tables WHERE name = 'UserVouchers')
+                    DROP TABLE [UserVouchers];
+                IF EXISTS (SELECT * FROM sys.tables WHERE name = 'Vouchers')
+                    DROP TABLE [Vouchers];
+            ");
 
-            migrationBuilder.DropTable(
-                name: "Vouchers");
-
-            migrationBuilder.DropIndex(
-                name: "IX_Orders_VoucherId",
-                table: "Orders");
-
-            migrationBuilder.DropColumn(
-                name: "DiscountAmount",
-                table: "Orders");
-
-            migrationBuilder.DropColumn(
-                name: "District",
-                table: "Orders");
-
-            migrationBuilder.DropColumn(
-                name: "FinalAmount",
-                table: "Orders");
-
-            migrationBuilder.DropColumn(
-                name: "Province",
-                table: "Orders");
-
-            migrationBuilder.DropColumn(
-                name: "ShippingFee",
-                table: "Orders");
-
-            migrationBuilder.DropColumn(
-                name: "VoucherId",
-                table: "Orders");
+            // Xóa các cột nếu tồn tại
+            migrationBuilder.Sql(@"
+                IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Orders') AND name = 'DiscountAmount')
+                    ALTER TABLE [Orders] DROP COLUMN [DiscountAmount];
+                IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Orders') AND name = 'District')
+                    ALTER TABLE [Orders] DROP COLUMN [District];
+                IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Orders') AND name = 'FinalAmount')
+                    ALTER TABLE [Orders] DROP COLUMN [FinalAmount];
+                IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Orders') AND name = 'Province')
+                    ALTER TABLE [Orders] DROP COLUMN [Province];
+                IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Orders') AND name = 'ShippingFee')
+                    ALTER TABLE [Orders] DROP COLUMN [ShippingFee];
+                IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Orders') AND name = 'VoucherId')
+                    ALTER TABLE [Orders] DROP COLUMN [VoucherId];
+            ");
         }
 
         /// <inheritdoc />
